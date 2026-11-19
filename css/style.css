@@ -245,3 +245,18 @@ body { user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color
   .bossBalken { margin-top: 4px; }
 }
 @media (prefers-reduced-motion: reduce) { .levelKarte::after, .updateIcon { animation: none; } }
+
+/* ----- Kartenwahl ----- */
+.kartenListe { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; max-width: 760px; }
+.karteKarte {
+  width: min(230px, 44vw); display: flex; flex-direction: column; gap: 6px; padding: 8px 8px 12px; text-align: center; cursor: pointer;
+  font: inherit; color: var(--text); background: var(--stahl); border: 3px solid var(--stahl-hell); border-radius: 16px;
+}
+.karteKarte b { font-family: var(--titel); font-weight: 400; font-size: 1rem; color: #ffffff; }
+.karteKarte.gewaehlt { border-color: var(--rot); box-shadow: 0 0 0 3px rgba(227,6,19,.35), 0 10px 24px rgba(0,0,0,.4); }
+.karteKarte.gesperrt { opacity: .55; cursor: default; }
+.karteBild { width: 100%; aspect-ratio: 2 / 1; height: auto; border-radius: 10px; }
+@media (max-height: 500px) {
+  .kartenListe { flex-wrap: nowrap; }
+  .karteKarte { width: min(220px, 30vw); padding: 6px 6px 8px; gap: 3px; }
+}

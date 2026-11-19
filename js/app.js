@@ -66,5 +66,5 @@ function querformatFesthalten() {
   if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen({ navigationUI: "hide" }).then(sperren).catch(() => {});
   else sperren();
 }
-document.getElementById("figurStart").addEventListener("click", querformatFesthalten);
+document.getElementById("karteStart").addEventListener("click", querformatFesthalten);
 document.getElementById("nochmalKnopf").addEventListener("click", querformatFesthalten);

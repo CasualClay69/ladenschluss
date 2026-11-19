@@ -7,6 +7,7 @@ const $ = id => document.getElementById(id);
 const leinwand = $("leinwand");
 const pinsel = leinwand.getContext("2d");
 let gewaehlteFigur = "stefan";
+let gewaehlteKarte = "farben";
 
 const zeitText = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 const zahl = n => Math.round(n).toLocaleString("de-DE");
@@ -58,6 +59,35 @@ function zeigeFiguren() {
   zeigeSchirm("figuren");
 }
 
+// ----- Kartenwahl (Abteilungen) -----
+function zeigeKarten() {
+  const liste = $("kartenListe");
+  liste.textContent = "";
+  for (const k of KARTEN) {
+    const b = document.createElement("button");
+    b.className = "karteKarte" + (k.gesperrt ? " gesperrt" : "") + (k.id === gewaehlteKarte ? " gewaehlt" : "");
+    b.disabled = !!k.gesperrt;
+    const bild = document.createElement("canvas");
+    bild.width = 220; bild.height = 110; bild.className = "karteBild";
+    const c = bild.getContext("2d");
+    if (k.gesperrt) {
+      c.fillStyle = "#2e343b"; c.fillRect(0, 0, 220, 110);
+      c.font = "48px sans-serif"; c.textAlign = "center"; c.globalAlpha = 0.5; c.fillText(k.icon, 110, 72);
+      c.globalAlpha = 1; c.font = "30px sans-serif"; c.fillText("🔒", 180, 100);
+    } else {
+      const boden = bodenKachel(k.boden); c.drawImage(boden.c, 0, 0, boden.c.width, boden.c.height, -150, -260, 640, 640);
+      const zeig = [[k.gegner.klein, 40, 70, 0], [k.gegner.basis, 78, 62, 2], [k.gegner.zaeh, 120, 66, 1], [k.gegner.flink, 165, 70, 0], [k.gegner.klein, 196, 82, 3]];
+      for (const [typ, px, py, v] of zeig) { const s = gegnerSprite(typ, v); c.drawImage(s.c, px - s.w / 2, py - s.h / 2, s.w, s.h); }
+    }
+    const rekord = SP.kartenRekord && SP.kartenRekord[k.id] ? `<div class="klein">Rekord: ${zeitText(SP.kartenRekord[k.id])}</div>` : "";
+    b.innerHTML = `<b>${k.icon} ${k.name}</b><div class="klein">${k.text}</div>${rekord}`;
+    b.prepend(bild);
+    b.addEventListener("click", () => { gewaehlteKarte = k.id; zeigeKarten(); });
+    liste.append(b);
+  }
+  zeigeSchirm("karten");
+}
+
 // ----- Werkstatt -----
 function zeigeWerkstatt() {
   $("werkstattEuro").textContent = zahl(SP.euro);
@@ -86,7 +116,7 @@ function zeigeWerkstatt() {
 // ----- Runde starten -----
 function starteRunde() {
   ton.an();
-  neueRunde(gewaehlteFigur);
+  neueRunde(gewaehlteFigur, gewaehlteKarte);
   zeigeSchirm(null);
   $("hud").hidden = false;
   zeigeHinweis(`🏪 Willkommen im tuum! Noch ${zeitText(SPIEL_DAUER)} bis Ladenschluss.`);
@@ -202,7 +232,9 @@ function beendeRunde(sieg) {
   speichern();
   ton.ende(sieg);
   $("endeTitel").textContent = sieg ? "🔔 Ladenschluss! Feierabend!" : "💥 Umgehauen!";
-  $("endeText").textContent = sieg ? `${G.fig.name} hat bis zum Ladenschluss durchgehalten. Ab nach Hause!` : `${G.fig.name} hat ${zeitText(G.zeit)} durchgehalten.`;
+  $("endeText").textContent = sieg ? `${G.fig.name} hat in der ${G.karte.name} bis zum Ladenschluss durchgehalten. Ab nach Hause!` : `${G.fig.name} hat ${zeitText(G.zeit)} in der ${G.karte.name} durchgehalten.`;
+  const kr = SP.kartenRekord = SP.kartenRekord || {};
+  if (G.zeit > (kr[G.karte.id] || 0)) kr[G.karte.id] = Math.floor(G.zeit);
   const waffenSchaden = Object.entries(G.schaden).sort((a, b) => b[1] - a[1])
     .map(([id, s]) => `<div>${WAFFEN[id].icon} ${WAFFEN[id].name}<span>${zahl(s)}</span></div>`).join("");
   $("endeWerte").innerHTML = `<div class="werteGitter">
@@ -241,7 +273,9 @@ function richteUiEin() {
   $("spielenKnopf").addEventListener("click", zeigeFiguren);
   $("werkstattKnopf").addEventListener("click", zeigeWerkstatt);
   $("tonKnopf").addEventListener("click", () => { SP.ton = !SP.ton; speichern(); zeigeTitel(); });
-  $("figurStart").addEventListener("click", starteRunde);
+  $("figurStart").addEventListener("click", zeigeKarten);
+  $("karteStart").addEventListener("click", starteRunde);
+  $("karteZurueck").addEventListener("click", zeigeFiguren);
   for (const b of document.querySelectorAll("[data-zurueck]")) b.addEventListener("click", zeigeTitel);
   $("pauseKnopf").addEventListener("click", umschaltenPause);
   $("weiterKnopf").addEventListener("click", umschaltenPause);

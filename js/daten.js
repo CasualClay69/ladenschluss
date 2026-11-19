@@ -67,28 +67,50 @@ const GEGNER = {
   stapler:  { name: "Amok-Gabelstapler", r: 40, leben: 1800, tempo: 78, schaden: 25, xp: 60,  boss: true },
   mischer:  { name: "Betonmischer",      r: 44, leben: 5000, tempo: 62, schaden: 32, xp: 120, boss: true },
   chef:     { name: "Der Filialleiter",  r: 38, leben: 12000, tempo: 92, schaden: 40, xp: 250, boss: true },
+
+  // ----- Farben-Abteilung (gleiche Werte wie die Rollen oben, nur anderes Aussehen) -----
+  klecks:   { name: "Farbklecks",   r: 9,  leben: 7,  tempo: 72,  schaden: 5,  xp: 1, varianten: 4 },
+  pinsel:   { name: "Pinsel",       r: 14, leben: 20, tempo: 88,  schaden: 8,  xp: 2, varianten: 3 },
+  roller:   { name: "Farbroller",   r: 14, leben: 28, tempo: 100, schaden: 9,  xp: 3, varianten: 3 },
+  eimer:    { name: "Farbeimer",    r: 16, leben: 55, tempo: 50,  schaden: 12, xp: 4, varianten: 3 },
+  spray:    { name: "Sprühdose",    r: 13, leben: 40, tempo: 125, schaden: 11, xp: 4, varianten: 3 },
+  tapete:   { name: "Tapetenrolle", r: 18, leben: 95, tempo: 92,  schaden: 18, xp: 7, varianten: 2 },
+  megaroller:   { name: "Mega-Farbroller",   r: 40, leben: 1800,  tempo: 82, schaden: 25, xp: 60,  boss: true },
+  mischmaschine:{ name: "Farbmischmaschine", r: 44, leben: 5000,  tempo: 62, schaden: 32, xp: 120, boss: true },
+  farbmeister:  { name: "Der Farbmeister",   r: 38, leben: 12000, tempo: 92, schaden: 40, xp: 250, boss: true },
 };
 
-// ----- Wellen: pro Minute, welche Gegner kommen und wie viele pro Sekunde -----
-const WELLEN = [
-  { typen: ["duebel"], rate: 1.2 },
-  { typen: ["duebel", "duebel", "wagen"], rate: 1.7 },
-  { typen: ["duebel", "wagen", "wagen"], rate: 2.1 },
-  { typen: ["wagen", "zange", "duebel"], rate: 2.5 },
-  { typen: ["zange", "wagen", "farbe"], rate: 2.9 },
-  { typen: ["duebel", "duebel", "duebel", "zange"], rate: 4.6 },
-  { typen: ["farbe", "zange", "maeher"], rate: 3.5 },
-  { typen: ["maeher", "wagen", "farbe"], rate: 4.0 },
-  { typen: ["farbe", "maeher", "zange"], rate: 4.6 },
-  { typen: ["saege", "zange", "maeher"], rate: 4.9 },
-  { typen: ["saege", "farbe", "maeher"], rate: 5.4 },
-  { typen: ["duebel", "duebel", "saege", "maeher"], rate: 7.4 },
-  { typen: ["saege", "farbe", "maeher", "zange"], rate: 6.4 },
-  { typen: ["saege", "saege", "maeher"], rate: 7.0 },
-  { typen: ["saege", "maeher", "farbe", "duebel"], rate: 8.0 },
+// Farben für Farb-Gegner und Kleckse (bewusst ohne Gelb)
+const FARBTOEPFE = ["#e30613", "#3aa935", "#2f7fd6", "#8f4bd6"];
+
+// ----- Karten (Abteilungen). gegner: welcher Gegner welche Rolle spielt -----
+const KARTEN = [
+  { id: "farben", name: "Farben-Abteilung", icon: "🎨", text: "Pinsel, Roller und Farbkleckse – hier wird es bunt!",
+    gegner: { klein: "klecks", basis: "pinsel", flink: "roller", zaeh: "eimer", schnell: "spray", schwer: "tapete" },
+    bosse: [[5 * 60, "megaroller"], [10 * 60, "mischmaschine"], [14 * 60, "farbmeister"]],
+    boden: "farben", deko: ["farbstapel", "farbwanne", "leiter", "farbfaecher", "aufsteller", "huetchen", "farbstapel"], flecken: true },
+  { id: "garten", name: "Garten-Abteilung", icon: "🌱", text: "Kommt bald …", gesperrt: true },
+  { id: "werkzeug", name: "Werkzeug-Abteilung", icon: "🔧", text: "Kommt bald …", gesperrt: true },
 ];
-// Bosse: [Sekunde, Typ]
-const BOSSE = [[5 * 60, "stapler"], [10 * 60, "mischer"], [14 * 60, "chef"]];
+
+// ----- Wellen: pro Minute, welche Rollen kommen und wie viele pro Sekunde (die Karte sagt, welcher Gegner welche Rolle ist) -----
+const WELLEN = [
+  { typen: ["klein"], rate: 1.2 },
+  { typen: ["klein", "klein", "basis"], rate: 1.7 },
+  { typen: ["klein", "basis", "basis"], rate: 2.1 },
+  { typen: ["basis", "flink", "klein"], rate: 2.5 },
+  { typen: ["flink", "basis", "zaeh"], rate: 2.9 },
+  { typen: ["klein", "klein", "klein", "flink"], rate: 4.6 },
+  { typen: ["zaeh", "flink", "schnell"], rate: 3.5 },
+  { typen: ["schnell", "basis", "zaeh"], rate: 4.0 },
+  { typen: ["zaeh", "schnell", "flink"], rate: 4.6 },
+  { typen: ["schwer", "flink", "schnell"], rate: 4.9 },
+  { typen: ["schwer", "zaeh", "schnell"], rate: 5.4 },
+  { typen: ["klein", "klein", "schwer", "schnell"], rate: 7.4 },
+  { typen: ["schwer", "zaeh", "schnell", "flink"], rate: 6.4 },
+  { typen: ["schwer", "schwer", "schnell"], rate: 7.0 },
+  { typen: ["schwer", "schnell", "zaeh", "klein"], rate: 8.0 },
+];
 const MAX_GEGNER = 380;
 const LEBEN_PRO_MINUTE = 0.14;   // Gegner werden pro Minute 14 % zäher
 

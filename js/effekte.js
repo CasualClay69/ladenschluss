@@ -25,13 +25,13 @@ function zerplatzen(e) {
     partikel({ art: "staub", x: e.x + Math.cos(a) * r * 0.4, y: e.y + Math.sin(a) * r * 0.4, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 15,
       t: 0.55, dauer: 0.55, groesse: r * (0.35 + Math.random() * 0.3) * (e.boss ? 1.6 : 1) });
   }
-  const farbe = TEIL_FARBEN[e.typ] || "#9aa3ad";
+  const farbe = e.farbe || TEIL_FARBEN[e.typ] || "#9aa3ad";
   for (let i = 0; i < (e.boss ? 14 : 3); i++) {
     const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4, v = 140 + Math.random() * 160;
     partikel({ art: "teil", x: e.x, y: e.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0.7, dauer: 0.7, farbe, dreh: Math.random() * 6, schwer: true,
       boden: e.y + e.r * 0.6 + Math.random() * 10 });
   }
-  if (G.effekte.length < 80) G.effekte.push({ art: "tod", typ: e.typ, x: e.x, y: e.y, links: e.x > G.x, t: 0.22, dauer: 0.22 });
+  if (G.effekte.length < 80) G.effekte.push({ art: "tod", typ: e.typ, v: e.v, x: e.x, y: e.y, links: e.x > G.x, t: 0.22, dauer: 0.22 });
 }
 function ringwelle(x, y, farbe, r, dauer = 0.5) {
   partikel({ art: "ring", x, y, vx: 0, vy: 0, t: dauer, dauer, farbe, groesse: r });
@@ -95,13 +95,13 @@ function zellZufall(cx, cy) {
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return (h ^ (h >>> 16)) >>> 0;
 }
-function zeichneDeko(x, ox, oy, W, H) {
+function zeichneDeko(x, ox, oy, W, H, arten = DEKO_ARTEN) {
   const c0 = Math.floor((-ox - 100) / DEKO_ZELLE), c1 = Math.floor((-ox + W + 100) / DEKO_ZELLE);
   const r0 = Math.floor((-oy - 100) / DEKO_ZELLE), r1 = Math.floor((-oy + H + 100) / DEKO_ZELLE);
   for (let cx = c0; cx <= c1; cx++) for (let cy = r0; cy <= r1; cy++) {
     const h = zellZufall(cx, cy);
     if (h % 100 > 62) continue;
-    const s = dekoSprite(DEKO_ARTEN[(h >>> 7) % DEKO_ARTEN.length]);
+    const s = dekoSprite(arten[(h >>> 7) % arten.length]);
     const px = cx * DEKO_ZELLE + 60 + ((h >>> 10) % 300) + ox, py = cy * DEKO_ZELLE + 60 + ((h >>> 19) % 300) + oy;
     x.fillStyle = "rgba(0,0,0,.2)"; x.beginPath(); x.ellipse(px, py + s.h / 2 - 3, s.w * 0.45, 7, 0, 0, Math.PI * 2); x.fill();
     x.drawImage(s.c, px - s.w / 2, py - s.h / 2, s.w, s.h);
@@ -121,18 +121,18 @@ function zeichneLicht(x, ox, oy, W, H) {
 // ----- Menü-Hintergrund: Halle mit Licht, und Stefan wird unten durchs Bild gejagt -----
 function zeichneMenue(x, zeit) {
   const W = ansicht.w, H = ansicht.h, ox = -(zeit * 30), oy = -(zeit * 10);
-  const b = bodenKachel(), bg = BODEN_GROESSE;
+  const karte = KARTEN[0], b = bodenKachel(karte.boden), bg = BODEN_GROESSE;
   const sx = ((ox % bg) + bg) % bg - bg, sy = ((oy % bg) + bg) % bg - bg;
   for (let px = sx; px < W; px += bg) for (let py = sy; py < H; py += bg) x.drawImage(b.c, px, py, bg, bg);
   zeichneLicht(x, ox, oy, W, H);
-  zeichneDeko(x, ox, oy, W, H);
+  zeichneDeko(x, ox, oy, W, H, karte.deko);
   x.fillStyle = "rgba(25,18,14,.42)"; x.fillRect(0, 0, W, H);
   // Verfolgungsjagd
   const weg = W + 520, kopf = (zeit * 140) % weg - 120, boden = H - 34;
   const fig = FIGUREN[0], st = figurSprite(fig, Math.floor(zeit * 8) % 2);
-  const jagd = [["wagen", 80], ["duebel", 128], ["duebel", 152], ["farbe", 196], ["maeher", 250], ["duebel", 290]];
-  for (const [typ, abstand] of jagd.reverse()) {
-    const s = gegnerSprite(typ), gx = kopf - abstand, hop = Math.abs(Math.sin(zeit * 10 + abstand)) * 4;
+  const jagd = [["roller", 80, 0], ["klecks", 126, 1], ["klecks", 150, 2], ["eimer", 196, 1], ["spray", 248, 0], ["klecks", 288, 3], ["pinsel", 326, 2]];
+  for (const [typ, abstand, v] of jagd.reverse()) {
+    const s = gegnerSprite(typ, v), gx = kopf - abstand, hop = Math.abs(Math.sin(zeit * 10 + abstand)) * 4;
     x.fillStyle = "rgba(0,0,0,.25)"; x.beginPath(); x.ellipse(gx, boden + 2, s.w * 0.36, 4, 0, 0, Math.PI * 2); x.fill();
     x.save(); x.translate(gx, boden - s.h / 2 - hop); x.scale(-1, 1); x.drawImage(s.c, -s.w / 2, -s.h / 2, s.w, s.h); x.restore();
   }

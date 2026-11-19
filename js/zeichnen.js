@@ -168,7 +168,7 @@ const GEGNER_MALEN = {
     x.beginPath(); x.moveTo(25, 24); x.quadraticCurveTo(30, 21, 35, 24); x.lineWidth = 2; x.strokeStyle = LINIE; x.stroke();
   }],
 };
-function gegnerSprite(typ) { const [w, h, m] = GEGNER_MALEN[typ]; return sprite("gegner-" + typ, w, h, m); }
+function gegnerSprite(typ, v = 0) { const [w, h, m] = GEGNER_MALEN[typ]; return sprite(`gegner-${typ}-${v}`, w, h, x => m(x, v)); }
 
 // ----- Geschosse, Funde -----
 const KLEIN_MALEN = {
@@ -191,8 +191,8 @@ function kleinSprite(k) { const [w, h, m] = KLEIN_MALEN[k]; return sprite("klein
 
 // ----- Boden: Baumarkt-Halle (eine große Kachel, die sich wiederholt) -----
 const BODEN_GROESSE = 640;
-function bodenKachel() {
-  return sprite("boden", BODEN_GROESSE, BODEN_GROESSE, x => {
+function bodenKachel(art = "standard") {
+  return sprite("boden-" + art, BODEN_GROESSE, BODEN_GROESSE, x => {
     x.fillStyle = "#a59f93"; x.fillRect(0, 0, BODEN_GROESSE, BODEN_GROESSE);
     let z = 7; const zufall = () => (z = (z * 16807) % 2147483647) / 2147483647;
     // Betonplatten
@@ -221,6 +221,20 @@ function bodenKachel() {
     x.textAlign = "left";
     x.fillStyle = "#3aa935"; rundRechteck(x, 40, 200, 66, 24, 5); x.fill();
     x.fillStyle = "#ffffff"; x.font = "900 12px Nunito, sans-serif"; x.fillText("GARTEN →", 46, 216);
+    // Farben-Abteilung: Farbspritzer, Tropfspuren und Fußabdrücke
+    if (art === "farben") {
+      for (let i = 0; i < 22; i++) {
+        const c = FARBTOEPFE[i % FARBTOEPFE.length], px = zufall() * BODEN_GROESSE, py = zufall() * BODEN_GROESSE, r = 4 + zufall() * 14;
+        x.globalAlpha = 0.35 + zufall() * 0.3; x.fillStyle = c;
+        x.beginPath(); for (let k = 0; k <= 10; k++) { const a = k / 10 * Math.PI * 2, rr = r * (0.75 + zufall() * 0.5); x.lineTo(px + Math.cos(a) * rr, py + Math.sin(a) * rr); } x.fill();
+        for (let k = 0; k < 4; k++) { kreis(x, px + (zufall() - 0.5) * r * 4, py + (zufall() - 0.5) * r * 4, 1 + zufall() * 2.5); x.fill(); }
+      }
+      x.globalAlpha = 0.4; x.fillStyle = "#2f7fd6";
+      for (let i = 0; i < 9; i++) { const px = 60 + i * 26, py = 560 - i * 20 + (i % 2) * 10; x.beginPath(); x.ellipse(px, py, 5, 8, 0.9, 0, Math.PI * 2); x.fill(); }
+      x.globalAlpha = 1;
+      x.fillStyle = "#e30613"; rundRechteck(x, 470, 210, 118, 30, 6); x.fill();
+      x.fillStyle = "#ffffff"; x.font = "900 14px Nunito, sans-serif"; x.textAlign = "center"; x.fillText("FARBEN & LACKE", 529, 230); x.textAlign = "left";
+    }
   });
 }
 
@@ -290,3 +304,139 @@ function vignette(w, h) {
   vignetteSpeicher = { w, h, c };
   return c;
 }
+
+// ----- Gegner der Farben-Abteilung (v = Farbvariante aus FARBTOEPFE) -----
+const topf = v => FARBTOEPFE[v % FARBTOEPFE.length];
+Object.assign(GEGNER_MALEN, {
+  klecks: [26, 24, (x, v) => {
+    const c = topf(v);
+    x.beginPath(); x.moveTo(13, 2); x.bezierCurveTo(20, 1, 25, 6, 23, 12); x.bezierCurveTo(26, 17, 22, 22, 17, 20);
+    x.bezierCurveTo(15, 24, 11, 24, 10, 20); x.bezierCurveTo(4, 22, 0, 16, 3, 11); x.bezierCurveTo(1, 5, 7, 1, 13, 2); x.closePath(); fuellen(x, c);
+    x.fillStyle = "rgba(255,255,255,.45)"; x.beginPath(); x.ellipse(8.5, 7, 3.5, 2, -0.5, 0, Math.PI * 2); x.fill();
+    boeseAugen(x, 13, 12, 4, 2.6);
+  }],
+  pinsel: [26, 42, (x, v) => {
+    rundRechteck(x, 10, 1, 6, 18, 3); fuellen(x, "#c98b55");
+    rundRechteck(x, 7, 16, 12, 9, 2); fuellen(x, "#c9ccd1");
+    x.beginPath(); x.moveTo(6, 25); x.lineTo(20, 25); x.lineTo(19, 33); x.lineTo(7, 33); x.closePath(); fuellen(x, "#e2c08d");
+    x.beginPath(); x.moveTo(7, 32); x.lineTo(19, 32); x.quadraticCurveTo(18, 40, 13, 41); x.quadraticCurveTo(8, 40, 7, 32); x.closePath(); fuellen(x, topf(v));
+    boeseAugen(x, 13, 20.5, 3.4, 2.3);
+  }],
+  roller: [42, 32, (x, v) => {
+    x.strokeStyle = "#7b8088"; x.lineWidth = 3; x.beginPath(); x.moveTo(31, 13); x.lineTo(37, 13); x.lineTo(37, 22); x.stroke();
+    rundRechteck(x, 33, 20, 8, 11, 3); fuellen(x, "#2f3338");
+    rundRechteck(x, 3, 4, 28, 18, 8); fuellen(x, topf(v));
+    x.fillStyle = "rgba(255,255,255,.3)"; x.fillRect(7, 7, 20, 3);
+    x.fillStyle = topf(v); x.beginPath(); x.ellipse(10, 24, 2, 4, 0, 0, Math.PI * 2); x.ellipse(22, 25, 1.6, 3, 0, 0, Math.PI * 2); x.fill();
+    boeseAugen(x, 16, 13, 5, 3.2);
+  }],
+  eimer: [34, 36, (x, v) => {
+    const c = topf(v);
+    x.beginPath(); x.arc(17, 8, 12, Math.PI, 0); x.lineWidth = 2; x.strokeStyle = "#555"; x.stroke();
+    rundRechteck(x, 5, 8, 24, 25, 4); fuellen(x, "#f4f4f4");
+    rundRechteck(x, 5, 8, 24, 7, 3); fuellen(x, c);
+    x.fillStyle = c; x.beginPath(); x.moveTo(9, 14); x.quadraticCurveTo(10, 23, 12, 14); x.moveTo(20, 14); x.quadraticCurveTo(21.5, 26, 23, 14); x.fill();
+    boeseAugen(x, 17, 23, 5, 3.4);
+  }],
+  spray: [26, 44, (x, v) => {
+    const c = topf(v);
+    x.fillStyle = "rgba(255,255,255,.55)"; for (const [px, py, r] of [[21, 3, 1.6], [24, 6, 1.2], [19, 1, 1]]) { kreis(x, px, py, r); x.fill(); }
+    rundRechteck(x, 15, 5, 5, 4, 1); fuellen(x, "#2f3338", 1.2);
+    rundRechteck(x, 7, 6, 12, 8, 3); fuellen(x, c);
+    rundRechteck(x, 5, 12, 16, 30, 5); fuellen(x, "#d7dbe0");
+    rundRechteck(x, 5, 19, 16, 15, 2); fuellen(x, c, 0);
+    x.fillStyle = "rgba(255,255,255,.4)"; x.fillRect(7, 14, 3, 26);
+    boeseAugen(x, 13, 26, 3.8, 2.6);
+  }],
+  tapete: [48, 38, (x, v) => {
+    const c = topf(v);
+    x.beginPath(); x.moveTo(8, 22); x.lineTo(2, 36); x.lineTo(30, 36); x.lineTo(34, 24); x.closePath(); fuellen(x, "#f6f1e7");
+    x.fillStyle = c; for (const [px, py] of [[8, 31], [16, 29], [24, 31], [13, 34], [21, 34]]) { kreis(x, px, py, 1.8); x.fill(); }
+    rundRechteck(x, 6, 3, 36, 22, 11); fuellen(x, "#f6f1e7");
+    x.fillStyle = c; for (let i = 0; i < 4; i++) x.fillRect(12 + i * 7, 4, 3, 20);
+    x.beginPath(); x.ellipse(41, 14, 4.5, 11, 0, 0, Math.PI * 2); fuellen(x, "#e6dccb");
+    x.beginPath(); x.ellipse(41, 14, 1.8, 4, 0, 0, Math.PI * 2); fuellen(x, "#c9b99d", 1.2);
+    boeseAugen(x, 23, 14, 5.5, 3.6);
+  }],
+  megaroller: [108, 80, x => {
+    x.strokeStyle = "#5b636c"; x.lineWidth = 7; x.beginPath(); x.moveTo(78, 34); x.lineTo(96, 34); x.lineTo(96, 58); x.stroke();
+    rundRechteck(x, 88, 54, 16, 24, 6); fuellen(x, "#2f3338");
+    rundRechteck(x, 4, 10, 76, 46, 22); fuellen(x, "#e30613");
+    x.fillStyle = "rgba(255,255,255,.28)"; x.fillRect(16, 16, 52, 6);
+    x.fillStyle = "#e30613"; for (const [px, l] of [[18, 18], [34, 12], [52, 22], [66, 10]]) { rundRechteck(x, px, 50, 7, l, 3.5); x.fill(); }
+    x.beginPath(); x.ellipse(6, 33, 6, 22, 0, 0, Math.PI * 2); fuellen(x, "#9aa3ad");
+    boeseAugen(x, 42, 31, 11, 6);
+    x.beginPath(); x.moveTo(30, 44); x.quadraticCurveTo(42, 38, 54, 44); x.lineWidth = 3; x.strokeStyle = LINIE; x.stroke();
+  }],
+  mischmaschine: [100, 94, x => {
+    for (const lx of [20, 74]) { rundRechteck(x, lx, 80, 8, 12, 2); fuellen(x, "#5b636c"); }
+    rundRechteck(x, 12, 30, 76, 54, 8); fuellen(x, "#9aa3ad");
+    rundRechteck(x, 34, 40, 32, 34, 4); fuellen(x, "#f4f4f4");
+    const streifen = FARBTOEPFE; for (let i = 0; i < 4; i++) { x.fillStyle = streifen[i]; x.fillRect(36, 44 + i * 7, 28, 5); }
+    x.strokeStyle = LINIE; x.lineWidth = 2; x.strokeRect(34, 40, 32, 34);
+    rundRechteck(x, 22, 6, 56, 28, 8); fuellen(x, "#e30613");
+    kreis(x, 80, 46, 4); fuellen(x, "#3aa935", 1.4); kreis(x, 80, 58, 4); fuellen(x, "#e30613", 1.4);
+    boeseAugen(x, 50, 19, 10, 5);
+    x.strokeStyle = "rgba(42,29,20,.6)"; x.lineWidth = 2.5;
+    for (const sx of [4, 94]) { x.beginPath(); x.moveTo(sx, 40); x.lineTo(sx + (sx < 50 ? 4 : -4), 46); x.lineTo(sx, 52); x.stroke(); }
+  }],
+  farbmeister: [72, 88, x => {
+    // Riesenpinsel
+    x.save(); x.translate(56, 46); x.rotate(0.35);
+    rundRechteck(x, -3, -40, 7, 34, 3); fuellen(x, "#c98b55");
+    rundRechteck(x, -6, -8, 13, 8, 2); fuellen(x, "#c9ccd1");
+    x.beginPath(); x.moveTo(-7, 0); x.lineTo(8, 0); x.quadraticCurveTo(7, 16, 0.5, 18); x.quadraticCurveTo(-6, 16, -7, 0); x.closePath(); fuellen(x, "#3aa935");
+    x.restore();
+    for (const lx of [22, 32]) { rundRechteck(x, lx, 58, 9, 20, 3); fuellen(x, "#f4f4f4"); }
+    for (const lx of [19, 31]) { rundRechteck(x, lx, 74, 12, 8, 3); fuellen(x, "#3b2a20"); }
+    rundRechteck(x, 14, 30, 34, 32, 8); fuellen(x, "#f4f4f4");
+    for (const [px, py, r, c] of [[20, 40, 3, "#e30613"], [38, 36, 2.4, "#2f7fd6"], [30, 52, 3.4, "#3aa935"], [42, 50, 2, "#8f4bd6"], [24, 56, 2, "#2f7fd6"]]) { kreis(x, px, py, r); x.fillStyle = c; x.fill(); }
+    x.strokeStyle = "#9aa3ad"; x.lineWidth = 3; x.beginPath(); x.moveTo(20, 30); x.lineTo(22, 42); x.moveTo(42, 30); x.lineTo(40, 42); x.stroke();
+    kreis(x, 48, 44, 5); fuellen(x, "#f2c9a0");
+    kreis(x, 31, 17, 13); fuellen(x, "#f2c9a0");
+    x.beginPath(); x.arc(31, 14, 13.5, Math.PI, 0); x.closePath(); fuellen(x, "#e30613");
+    rundRechteck(x, 28, 11, 20, 4.5, 2); fuellen(x, "#e30613");
+    x.fillStyle = "#ffffff"; x.font = "900 5px Nunito, sans-serif"; x.textAlign = "center"; x.fillText("tuum", 31, 9.5); x.textAlign = "left";
+    boeseAugen(x, 31, 18, 5, 3.4);
+    x.beginPath(); x.moveTo(25, 25); x.quadraticCurveTo(31, 22, 37, 25); x.lineWidth = 2; x.strokeStyle = LINIE; x.stroke();
+    kreis(x, 22, 21, 1.8); x.fillStyle = "#2f7fd6"; x.fill();
+  }],
+});
+
+// ----- Farbkleckse am Boden (bleiben eine Weile liegen) -----
+function fleckSprite(farbe, form) {
+  return sprite(`fleck-${farbe}-${form}`, 64, 64, x => {
+    let z = form * 977 + 13; const zufall = () => (z = (z * 16807) % 2147483647) / 2147483647;
+    x.fillStyle = farbe;
+    x.beginPath();
+    for (let i = 0; i <= 14; i++) { const a = i / 14 * Math.PI * 2, r = 16 + zufall() * 8; x.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r); }
+    x.closePath(); x.fill();
+    for (let i = 0; i < 7; i++) { const a = zufall() * Math.PI * 2, r = 25 + zufall() * 6; kreis(x, 32 + Math.cos(a) * r, 32 + Math.sin(a) * r, 1.5 + zufall() * 3); x.fill(); }
+    x.fillStyle = "rgba(255,255,255,.25)"; x.beginPath(); x.ellipse(26, 25, 6, 3, -0.6, 0, Math.PI * 2); x.fill();
+  });
+}
+
+// ----- Deko der Farben-Abteilung -----
+Object.assign(DEKO_MALEN, {
+  farbwanne: [52, 34, x => {
+    x.beginPath(); x.moveTo(3, 6); x.lineTo(44, 6); x.lineTo(40, 30); x.lineTo(7, 30); x.closePath(); fuellen(x, "#d7dbe0");
+    x.beginPath(); x.moveTo(8, 9); x.lineTo(26, 9); x.lineTo(24, 27); x.lineTo(10, 27); x.closePath(); fuellen(x, "#2f7fd6", 0);
+    rundRechteck(x, 26, 2, 22, 10, 5); fuellen(x, "#2f7fd6");
+    x.strokeStyle = "#7b8088"; x.lineWidth = 2.5; x.beginPath(); x.moveTo(48, 7); x.lineTo(51, 7); x.lineTo(51, 20); x.stroke();
+  }],
+  leiter: [40, 74, x => {
+    x.strokeStyle = "#9aa3ad"; x.lineWidth = 4;
+    x.beginPath(); x.moveTo(8, 72); x.lineTo(16, 3); x.moveTo(32, 72); x.lineTo(24, 3); x.stroke();
+    x.lineWidth = 3; for (let i = 0; i < 5; i++) { const y = 14 + i * 13, d = (y - 3) / 69 * 8; x.beginPath(); x.moveTo(16 - d, y); x.lineTo(24 + d, y); x.stroke(); }
+    rundRechteck(x, 13, 0, 14, 6, 2); fuellen(x, "#e30613");
+    x.fillStyle = "#3aa935"; kreis(x, 30, 50, 2.5); x.fill(); x.fillStyle = "#e30613"; kreis(x, 10, 36, 2); x.fill();
+  }],
+  farbfaecher: [46, 46, x => {
+    const farben = ["#e30613", "#ff7a85", "#3aa935", "#9be08f", "#2f7fd6", "#8fc6ff", "#8f4bd6", "#f4f4f4"];
+    for (let i = 0; i < farben.length; i++) {
+      x.save(); x.translate(23, 40); x.rotate(-1.15 + i * 0.33);
+      rundRechteck(x, -4, -34, 8, 34, 2); fuellen(x, farben[i], 1.4); x.restore();
+    }
+    kreis(x, 23, 40, 4); fuellen(x, "#5b636c");
+  }],
+});

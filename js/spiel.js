@@ -38,10 +38,11 @@ function waffenWerte(id, stufe) {
 }
 
 // ----- Neue Runde -----
-function neueRunde(figurId) {
+function neueRunde(figurId, karteId = "farben") {
   const fig = FIGUREN.find(f => f.id === figurId) || FIGUREN[0];
+  const karte = KARTEN.find(k => k.id === karteId && !k.gesperrt) || KARTEN[0];
   G = {
-    fig, zeit: 0, x: 0, y: 0, leben: 100, blick: 1, richtung: { x: 1, y: 0 }, laufZeit: 0, unverwundbar: 0,
+    fig, karte, flecken: [], zeit: 0, x: 0, y: 0, leben: 100, blick: 1, richtung: { x: 1, y: 0 }, laufZeit: 0, unverwundbar: 0,
     lvl: 1, xp: 0, xpNext: xpBis(1), offeneLevel: 0, kills: 0, euro: 0,
     waffen: [], ausr: {}, gegner: [], geschosse: [], funde: [], pfuetzen: [], effekte: [], texte: [],
     spawnRest: 0, bossNr: 0, ende: null, pause: false, schaden: {}, w: null, partikel: [], wackeln: 0, rotBlitz: 0, lvlBlitz: 0,
@@ -98,7 +99,8 @@ function sichtRadius() { return Math.hypot(ansicht.w, ansicht.h) / 2; }
 function spawneGegner(typ, boss = false) {
   const d = GEGNER[typ], a = Math.random() * Math.PI * 2, r = sichtRadius() + 40 + d.r;
   const faktor = 1 + (G.zeit / 60) * LEBEN_PRO_MINUTE;
-  G.gegner.push({ typ, x: G.x + Math.cos(a) * r, y: G.y + Math.sin(a) * r, leben: d.leben * faktor, maxLeben: d.leben * faktor,
+  const v = d.varianten ? Math.floor(Math.random() * d.varianten) : 0;
+  G.gegner.push({ typ, v, farbe: d.varianten ? FARBTOEPFE[v % FARBTOEPFE.length] : null, x: G.x + Math.cos(a) * r, y: G.y + Math.sin(a) * r, leben: d.leben * faktor, maxLeben: d.leben * faktor,
     r: d.r, tempo: d.tempo * (0.92 + Math.random() * 0.16), schaden: d.schaden, xp: d.xp, boss, kx: 0, ky: 0, blitz: 0, langsamBis: 0, treffer: {} });
   if (boss) { zeigeBanner(`⚠️ ${d.name} kommt!`); wackeln(12); }
 }
@@ -107,9 +109,10 @@ function spawnen(dt) {
   G.spawnRest += welle.rate * dt;
   while (G.spawnRest >= 1) {
     G.spawnRest--;
-    if (G.gegner.length < MAX_GEGNER) spawneGegner(welle.typen[Math.floor(Math.random() * welle.typen.length)]);
+    if (G.gegner.length < MAX_GEGNER) spawneGegner(G.karte.gegner[welle.typen[Math.floor(Math.random() * welle.typen.length)]]);
   }
-  while (G.bossNr < BOSSE.length && G.zeit >= BOSSE[G.bossNr][0]) spawneGegner(BOSSE[G.bossNr++][1], true);
+  const bosse = G.karte.bosse;
+  while (G.bossNr < bosse.length && G.zeit >= bosse[G.bossNr][0]) spawneGegner(bosse[G.bossNr++][1], true);
 }
 
 // ----- Schaden -----
@@ -128,6 +131,11 @@ function besiegt(e) {
   e.tot = true;
   G.kills++;
   zerplatzen(e);
+  if (G.karte.flecken) {   // Farbklecks bleibt am Boden liegen
+    G.flecken.push({ x: e.x, y: e.y + e.r * 0.4, r: e.r * (e.boss ? 2.6 : 1.5), farbe: e.farbe || FARBTOEPFE[Math.floor(Math.random() * FARBTOEPFE.length)],
+      form: Math.floor(Math.random() * 3), dreh: Math.random() * 6, bis: G.zeit + 25 });
+    if (G.flecken.length > 160) G.flecken.shift();
+  }
   if (e.boss) { wackeln(16); ringwelle(e.x, e.y, "#ffffff", 140, 0.7); zeigeBanner(`🏆 ${GEGNER[e.typ].name} besiegt!`); }
   const art = e.xp >= 5 ? "xp3" : e.xp >= 2 ? "xp2" : "xp1";
   G.funde.push({ art, x: e.x, y: e.y, wert: e.xp });
@@ -367,6 +375,7 @@ function aktualisiere(dt) {
   G.geschosse = G.geschosse.filter(g => g.leben > 0);
   G.funde = G.funde.filter(f => !f.weg);
   G.pfuetzen = G.pfuetzen.filter(p => p.bis > G.zeit);
+  if (G.flecken.length && G.flecken[0].bis < G.zeit) G.flecken = G.flecken.filter(f => f.bis > G.zeit);
   G.effekte = G.effekte.filter(e => e.t > 0);
   G.texte = G.texte.filter(t => t.t > 0);
   if (G.funde.length > 600) zusammenlegen();
@@ -435,11 +444,20 @@ function zeichneSpiel(x) {
   const sx0 = W / 2 + wx, sy0 = H / 2 + wy;   // Spieler auf dem Bildschirm
 
   // Boden, Licht, Deko
-  const b = bodenKachel(), bg = BODEN_GROESSE;
+  const b = bodenKachel(G.karte.boden), bg = BODEN_GROESSE;
   const bx = ((ox % bg) + bg) % bg - bg, by = ((oy % bg) + bg) % bg - bg;
   for (let px = bx; px < W; px += bg) for (let py = by; py < H; py += bg) x.drawImage(b.c, px, py, bg, bg);
   zeichneLicht(x, ox, oy, W, H);
-  zeichneDeko(x, ox, oy, W, H);
+  zeichneDeko(x, ox, oy, W, H, G.karte.deko);
+  // Farbkleckse besiegter Gegner
+  for (const f of G.flecken) {
+    const fx = f.x + ox, fy = f.y + oy;
+    if (fx < -80 || fy < -80 || fx > W + 80 || fy > H + 80) continue;
+    const s = fleckSprite(f.farbe, f.form);
+    x.globalAlpha = 0.7 * Math.min(1, (f.bis - G.zeit) / 4);
+    x.save(); x.translate(fx, fy); x.rotate(f.dreh); x.scale(1, 0.62); x.drawImage(s.c, -f.r * 1.3, -f.r * 1.3, f.r * 2.6, f.r * 2.6); x.restore();
+  }
+  x.globalAlpha = 1;
 
   // Farbpfützen (mit glänzendem Rand)
   for (const p of G.pfuetzen) {
@@ -481,14 +499,14 @@ function zeichneSpiel(x) {
   // Gegner (von oben nach unten, damit vordere vorne sind)
   const sicht = G.gegner.filter(e => e.x + ox > -70 && e.x + ox < W + 70 && e.y + oy > -70 && e.y + oy < H + 70).sort((a, b) => a.y - b.y);
   for (const e of sicht) {
-    const s = gegnerSprite(e.typ), ex = e.x + ox, ey = e.y + oy;
+    const s = gegnerSprite(e.typ, e.v), ex = e.x + ox, ey = e.y + oy;
     const schritt = Math.sin(G.zeit * 14 + e.x * 0.07);
     x.fillStyle = "rgba(0,0,0,.22)"; x.beginPath(); x.ellipse(ex, ey + s.h / 2 - 2, s.w * 0.36, 4 + e.r * 0.15, 0, 0, Math.PI * 2); x.fill();
     if (e.boss) {
       x.globalAlpha = 0.25 + 0.15 * Math.sin(G.zeit * 5); x.fillStyle = "#e30613";
       x.beginPath(); x.ellipse(ex, ey + s.h / 2 - 2, s.w * 0.6, 12, 0, 0, Math.PI * 2); x.fill(); x.globalAlpha = 1;
     }
-    const bild = e.blitz > 0 ? weissSprite("gegner-" + e.typ, s) : s;
+    const bild = e.blitz > 0 ? weissSprite(`gegner-${e.typ}-${e.v}`, s) : s;
     x.save(); x.translate(ex, ey - Math.abs(schritt) * 2);
     x.scale((e.x > G.x ? -1 : 1) * (1 + schritt * 0.03), 1 - schritt * 0.03);
     x.drawImage(bild.c, -s.w / 2, -s.h / 2, s.w, s.h);
@@ -500,7 +518,7 @@ function zeichneSpiel(x) {
   }
   // Besiegte Gegner: kurz aufblähen und verblassen
   for (const t of G.effekte) if (t.art === "tod") {
-    const s = weissSprite("gegner-" + t.typ, gegnerSprite(t.typ)), a = t.t / t.dauer;
+    const s = weissSprite(`gegner-${t.typ}-${t.v}`, gegnerSprite(t.typ, t.v)), a = t.t / t.dauer;
     x.globalAlpha = a * 0.9;
     x.save(); x.translate(t.x + ox, t.y + oy); x.scale((t.links ? -1 : 1) * (1 + (1 - a) * 0.5), 1 + (1 - a) * 0.5);
     x.drawImage(s.c, -s.w / 2, -s.h / 2, s.w, s.h); x.restore();
