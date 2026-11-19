@@ -30,6 +30,7 @@ window.addEventListener("resize", groesseAnpassen);
 function zeigeTitel() {
   G = null;
   $("hud").hidden = true;
+  if (window.updateWartet && typeof pruefeAufUpdate === "function") pruefeAufUpdate();
   $("titelEuro").textContent = zahl(SP.euro);
   $("titelRekord").textContent = SP.rekord.zeit ? `Rekord: ${zeitText(SP.rekord.zeit)} · ${zahl(SP.rekord.kills)} besiegt · Level ${SP.rekord.lvl}${SP.siege ? ` · ${SP.siege}× Feierabend erreicht 🏆` : ""}` : "Halte 15 Minuten durch – dann ist Ladenschluss!";
   $("tonKnopf").textContent = SP.ton ? "🔊 Ton an" : "🔇 Ton aus";
@@ -95,6 +96,13 @@ function starteRunde() {
 let hudStand = "";
 function aktualisiereHud() {
   $("xpFuellung").style.width = (100 * Math.min(1, G.xp / G.xpNext)) + "%";
+  // Boss-Leiste oben
+  const boss = G.gegner.find(e => e.boss);
+  $("bossBalken").hidden = !boss;
+  if (boss) {
+    $("bossName").textContent = GEGNER[boss.typ].name;
+    $("bossFuellung").style.width = (100 * Math.max(0, boss.leben / boss.maxLeben)) + "%";
+  }
   const rest = Math.max(0, SPIEL_DAUER - G.zeit);
   const stand = `${G.lvl}|${Math.floor(rest)}|${G.kills}|${G.euro}|${G.waffen.map(w => w.id + w.stufe).join()}|${JSON.stringify(G.ausr)}`;
   if (stand === hudStand) return;
@@ -151,7 +159,10 @@ function zeigeLevelAuswahl() {
     const t = optionText(o);
     const k = document.createElement("button");
     k.className = "levelKarte";
-    k.innerHTML = `<span class="levelIcon">${t.icon}</span><div><b>${t.titel}</b> ${t.neu ? '<span class="neu">NEU</span>' : t.stufe ? `<span class="stufe">Stufe ${t.stufe}</span>` : ""}<div class="klein">${t.text}</div></div>`;
+    const max = o.art === "waffe" ? 8 : o.art === "ausr" ? (AUSRUESTUNG[o.id].max || 5) : 0;
+    const punkte = max ? `<div class="levelPunkte">${"<i class=\"an\"></i>".repeat(o.stufe)}${"<i></i>".repeat(max - o.stufe)}</div>` : "";
+    k.className = "levelKarte" + (t.neu ? " istNeu" : "");
+    k.innerHTML = `<span class="levelIcon">${t.icon}</span><div><b>${t.titel}</b> ${t.neu ? '<span class="neu">NEU</span>' : t.stufe ? `<span class="stufe">Stufe ${t.stufe}</span>` : ""}<div class="klein">${t.text}</div>${punkte}</div>`;
     k.addEventListener("click", () => {
       waehleOption(o);
       G.offeneLevel--;
@@ -216,11 +227,9 @@ function schleife(jetzt) {
     zeichneJoystick(pinsel);
     aktualisiereHud();
   } else {
-    // Menü-Hintergrund: langsam über den Baumarkt-Boden fahren
+    // Menü-Hintergrund: Halle mit Licht – und Stefan wird unten durchs Bild gejagt
     menueZeit += dt;
-    const b = bodenKachel(), bg = BODEN_GROESSE, ox = -(menueZeit * 25) % bg, oy = -(menueZeit * 12) % bg;
-    for (let px = ox - bg; px < ansicht.w; px += bg) for (let py = oy - bg; py < ansicht.h; py += bg) pinsel.drawImage(b.c, px, py, bg, bg);
-    pinsel.fillStyle = "rgba(20,16,12,.55)"; pinsel.fillRect(0, 0, ansicht.w, ansicht.h);
+    zeichneMenue(pinsel, menueZeit);
   }
   requestAnimationFrame(schleife);
 }

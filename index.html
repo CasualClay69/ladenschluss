@@ -22,6 +22,7 @@
 <script src="js/speicher.js" defer></script>
 <script src="js/ton.js" defer></script>
 <script src="js/zeichnen.js" defer></script>
+<script src="js/effekte.js" defer></script>
 <script src="js/eingabe.js" defer></script>
 <script src="js/spiel.js" defer></script>
 <script src="js/ui.js" defer></script>
@@ -60,6 +61,7 @@
     <div id="hudZeit" class="hudZeit">15:00</div>
     <div class="hudRechts"><span>💀 <b id="hudKills">0</b></span><span>💶 <b id="hudEuro">0</b></span><button id="pauseKnopf" type="button" aria-label="Pause">⏸</button></div>
   </div>
+  <div id="bossBalken" class="bossBalken" hidden><b id="bossName"></b><div class="bossLeiste"><i id="bossFuellung"></i></div></div>
 </div>
 <div id="banner"></div>
 <div id="hinweise"></div>
@@ -112,6 +114,18 @@
     <h2>⏸ Kaffeepause</h2>
     <div id="pauseInhalt"></div>
     <div class="knopfZeile"><button id="aufgebenKnopf" class="knopf leise" type="button">Aufgeben</button><button id="weiterKnopf" class="knopf gross" type="button">Weiter</button></div>
+  </div>
+</section>
+
+<!-- Neue Version verfügbar (js/app.js) -->
+<section id="update" class="overlay" hidden>
+  <div class="karte">
+    <div class="updateIcon">🔄</div>
+    <h2>Neue Version!</h2>
+    <p id="updateText" class="klein"></p>
+    <p id="updateNeu" class="updateNeu"></p>
+    <p class="klein">Dein Fortschritt (Euro, Werkstatt, Rekorde) bleibt erhalten.</p>
+    <div class="knopfZeile"><button id="updateSpaeter" class="knopf leise" type="button">Später</button><button id="updateJetzt" class="knopf gross" type="button">🔄 Jetzt aktualisieren</button></div>
   </div>
 </section>
 

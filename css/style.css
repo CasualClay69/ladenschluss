@@ -214,3 +214,34 @@ body { user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color
   .splashBalken { margin-top: 16px; }
   .splashFuss { bottom: calc(10px + env(safe-area-inset-bottom)); }
 }
+
+/* ----- Feinschliff: Anzeige, Level-Karten, Boss-Leiste, Update-Fenster ----- */
+.hudZeit { padding: 0 14px; border-radius: 12px; background: rgba(20,14,10,.55); border: 2px solid rgba(255,255,255,.18); }
+.xpBalken { border-color: #1b1b1b; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+#hudLevel { left: 50%; right: auto; transform: translateX(-50%); }
+.hudRechts > span { padding: 4px 9px; border-radius: 10px; background: rgba(20,14,10,.55); }
+.bossBalken { width: min(420px, 70vw); margin: 8px auto 0; text-align: center; animation: karteRein .3s ease-out both; }
+.bossBalken b { display: block; font-family: var(--titel); font-weight: 400; font-size: .95rem; color: #ffffff; text-shadow: 0 2px 0 #000, 0 0 10px rgba(227,6,19,.9); }
+.bossLeiste { height: 12px; margin-top: 3px; border-radius: 6px; overflow: hidden; background: rgba(0,0,0,.6); border: 2px solid #1b1b1b; box-shadow: 0 0 12px rgba(227,6,19,.5); }
+.bossLeiste i { display: block; height: 100%; width: 100%; background: linear-gradient(180deg, #ff4b55, #e30613 60%, #a3000e); transition: width .2s; }
+.levelKarte { position: relative; overflow: hidden; background: linear-gradient(180deg, #2a3038, var(--dunkel)); box-shadow: 0 4px 0 rgba(0,0,0,.35); }
+.levelKarte.istNeu { border-color: var(--gruen); }
+.levelKarte::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.08) 50%, transparent 60%); transform: translateX(-100%); animation: glanz 2.4s ease-in-out infinite; pointer-events: none; }
+@keyframes glanz { 60%, 100% { transform: translateX(100%); } }
+.levelIcon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.12); flex: none; }
+.levelPunkte { display: flex; gap: 3px; margin-top: 5px; }
+.levelPunkte i { width: 9px; height: 9px; border-radius: 3px; background: rgba(255,255,255,.14); }
+.levelPunkte i.an { background: var(--gruen); box-shadow: 0 0 6px rgba(58,169,53,.7); }
+#levelup .karte { border-color: var(--gruen); }
+#levelTitel { font-size: 1.8rem; animation: levelTitel .5s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes levelTitel { from { transform: scale(.4); opacity: 0; } }
+.updateIcon { font-size: 2.6rem; animation: updateDreh 2.4s linear infinite; display: inline-block; }
+@keyframes updateDreh { to { transform: rotate(360deg); } }
+.updateNeu { margin: 10px 0; padding: 10px 12px; border-radius: 12px; background: var(--dunkel); font-weight: 800; text-align: left; }
+.updateNeu:empty { display: none; }
+@media (max-height: 500px) {
+  .levelIcon { width: 44px; height: 44px; }
+  .levelPunkte { justify-content: center; }
+  .bossBalken { margin-top: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { .levelKarte::after, .updateIcon { animation: none; } }

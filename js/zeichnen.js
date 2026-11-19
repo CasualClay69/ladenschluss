@@ -193,7 +193,7 @@ function kleinSprite(k) { const [w, h, m] = KLEIN_MALEN[k]; return sprite("klein
 const BODEN_GROESSE = 640;
 function bodenKachel() {
   return sprite("boden", BODEN_GROESSE, BODEN_GROESSE, x => {
-    x.fillStyle = "#b9b4aa"; x.fillRect(0, 0, BODEN_GROESSE, BODEN_GROESSE);
+    x.fillStyle = "#a59f93"; x.fillRect(0, 0, BODEN_GROESSE, BODEN_GROESSE);
     let z = 7; const zufall = () => (z = (z * 16807) % 2147483647) / 2147483647;
     // Betonplatten
     x.strokeStyle = "rgba(90,84,76,.25)"; x.lineWidth = 2;
@@ -206,8 +206,8 @@ function bodenKachel() {
     for (let i = 0; i < BODEN_GROESSE; i += 8) x.fillRect(i, 306, 1.5, i % 40 === 0 ? 12 : 6);
     for (let i = 0; i < BODEN_GROESSE; i += 128) x.fillRect(i, 306, 2, 26);
     // tuum-Logo auf dem Boden
-    x.save(); x.globalAlpha = 0.85; x.fillStyle = "#e30613"; rundRechteck(x, 380, 380, 150, 64, 14); x.fill();
-    x.fillStyle = "#ffffff"; x.font = "900 44px Nunito, sans-serif"; x.textAlign = "center"; x.fillText("tuum", 455, 426); x.restore();
+    x.save(); x.globalAlpha = 0.3; x.fillStyle = "#e30613"; rundRechteck(x, 380, 380, 150, 64, 14); x.fill();
+    x.globalAlpha = 0.45; x.fillStyle = "#ffffff"; x.font = "900 44px Nunito, sans-serif"; x.textAlign = "center"; x.fillText("tuum", 455, 426); x.restore();
     // Pfeile auf dem Boden
     x.fillStyle = "rgba(255,255,255,.55)";
     for (const [px, py, r] of [[120, 120, 0], [480, 520, Math.PI]]) {
@@ -218,9 +218,75 @@ function bodenKachel() {
       x.fillStyle = "#a8783f"; x.fillRect(px, py, 70, 50); x.fillStyle = "#8a5f2c";
       for (let i = 0; i < 4; i++) x.fillRect(px, py + 4 + i * 12, 70, 4);
     }
-    x.fillStyle = "#e30613"; rundRechteck(x, 230, 520, 60, 30, 5); x.fill();
-    x.fillStyle = "#ffffff"; x.font = "900 17px Nunito, sans-serif"; x.textAlign = "left"; x.fillText("–50%", 236, 541);
+    x.textAlign = "left";
     x.fillStyle = "#3aa935"; rundRechteck(x, 40, 200, 66, 24, 5); x.fill();
     x.fillStyle = "#ffffff"; x.font = "900 12px Nunito, sans-serif"; x.fillText("GARTEN →", 46, 216);
   });
+}
+
+// ----- Deko in der Halle (liegt am Boden, Gegner laufen darüber) -----
+const DEKO_MALEN = {
+  palette: [86, 70, x => {
+    rundRechteck(x, 3, 46, 80, 20, 3); fuellen(x, "#b98a52"); x.fillStyle = "#8a5f2c"; for (const px of [8, 38, 68]) x.fillRect(px, 58, 10, 8);
+    rundRechteck(x, 8, 16, 36, 32, 3); fuellen(x, "#c9a06b"); rundRechteck(x, 42, 22, 36, 26, 3); fuellen(x, "#d9b07a");
+    rundRechteck(x, 22, 2, 34, 22, 3); fuellen(x, "#c9a06b");
+    x.fillStyle = "#e30613"; x.fillRect(14, 26, 22, 5); x.fillStyle = "#3aa935"; x.fillRect(48, 30, 22, 5);
+    x.strokeStyle = "rgba(42,29,20,.35)"; x.lineWidth = 1.5; x.beginPath(); x.moveTo(26, 16); x.lineTo(26, 48); x.moveTo(60, 22); x.lineTo(60, 48); x.moveTo(39, 2); x.lineTo(39, 24); x.stroke();
+  }],
+  farbstapel: [64, 62, x => {
+    const eimer = (px, py, farbe) => { rundRechteck(x, px, py, 22, 22, 4); fuellen(x, "#f4f4f4"); rundRechteck(x, px, py, 22, 7, 3); fuellen(x, farbe); };
+    eimer(4, 36, "#e30613"); eimer(24, 36, "#3aa935"); eimer(44, 36, "#3a8ee6"); eimer(14, 16, "#3aa935"); eimer(34, 16, "#e30613");
+    rundRechteck(x, 24, 0, 18, 18, 4); fuellen(x, "#f4f4f4"); rundRechteck(x, 24, 0, 18, 6, 3); fuellen(x, "#8f5bd6");
+  }],
+  pflanze: [52, 64, x => {
+    x.fillStyle = "#2f8f2c";
+    for (const [a, l] of [[-2.2, 26], [-1.6, 30], [-1.1, 28], [-0.6, 24], [-2.6, 20], [-0.2, 20]]) {
+      x.save(); x.translate(26, 36); x.rotate(a); x.beginPath(); x.ellipse(l / 2, 0, l / 2, 6, 0, 0, Math.PI * 2); x.fill(); x.lineWidth = 1.5; x.strokeStyle = "#1f6b1c"; x.stroke(); x.restore();
+    }
+    x.beginPath(); x.moveTo(10, 36); x.lineTo(42, 36); x.lineTo(38, 62); x.lineTo(14, 62); x.closePath(); fuellen(x, "#c96a3a");
+    rundRechteck(x, 8, 33, 36, 7, 2); fuellen(x, "#b3582c");
+  }],
+  huetchen: [30, 40, x => {
+    rundRechteck(x, 1, 33, 28, 6, 2); fuellen(x, "#d7dbe0");
+    x.beginPath(); x.moveTo(15, 1); x.lineTo(25, 34); x.lineTo(5, 34); x.closePath(); fuellen(x, "#e30613");
+    x.fillStyle = "#ffffff"; x.beginPath(); x.moveTo(11.5, 13); x.lineTo(18.5, 13); x.lineTo(20.4, 19); x.lineTo(9.6, 19); x.closePath(); x.fill();
+    x.beginPath(); x.moveTo(8.4, 24); x.lineTo(21.6, 24); x.lineTo(23, 29); x.lineTo(7, 29); x.closePath(); x.fill();
+  }],
+  aufsteller: [56, 66, x => {
+    x.strokeStyle = LINIE; x.lineWidth = 3; x.beginPath(); x.moveTo(14, 64); x.lineTo(20, 40); x.moveTo(42, 64); x.lineTo(36, 40); x.stroke();
+    rundRechteck(x, 3, 2, 50, 42, 6); fuellen(x, "#e30613");
+    rundRechteck(x, 8, 7, 40, 15, 4); fuellen(x, "#ffffff", 0);
+    x.fillStyle = "#e30613"; x.font = "900 13px Nunito, sans-serif"; x.textAlign = "center"; x.fillText("tuum", 28, 19);
+    x.fillStyle = "#ffffff"; x.font = "900 10px Nunito, sans-serif"; x.fillText("ANGEBOT", 28, 35); x.textAlign = "left";
+  }],
+  korb: [40, 34, x => {
+    x.beginPath(); x.moveTo(3, 10); x.lineTo(37, 10); x.lineTo(33, 31); x.lineTo(7, 31); x.closePath(); fuellen(x, "#e30613");
+    x.strokeStyle = "rgba(255,255,255,.55)"; x.lineWidth = 1.5;
+    for (let i = 1; i < 6; i++) { x.beginPath(); x.moveTo(3 + i * 5.7, 12); x.lineTo(7 + i * 4.4, 29); x.stroke(); }
+    x.beginPath(); x.arc(20, 10, 13, Math.PI, 0); x.lineWidth = 3; x.strokeStyle = LINIE; x.stroke();
+    rundRechteck(x, 10, 4, 9, 9, 2); fuellen(x, "#3aa935", 1.4);
+  }],
+};
+function dekoSprite(k) { const [w, h, m] = DEKO_MALEN[k]; return sprite("deko-" + k, w, h, m); }
+const DEKO_ARTEN = Object.keys(DEKO_MALEN);
+
+// Weicher Lichtkegel einer Hallenlampe
+function lichtSprite() {
+  return sprite("licht", 360, 360, x => {
+    const g = x.createRadialGradient(180, 180, 0, 180, 180, 180);
+    g.addColorStop(0, "rgba(255,246,225,.17)"); g.addColorStop(0.5, "rgba(255,246,225,.06)"); g.addColorStop(1, "rgba(255,250,235,0)");
+    x.fillStyle = g; x.fillRect(0, 0, 360, 360);
+  });
+}
+// Dunkle Ränder (wird für jede Bildschirmgröße einmal gemalt)
+let vignetteSpeicher = null;
+function vignette(w, h) {
+  if (vignetteSpeicher && vignetteSpeicher.w === w && vignetteSpeicher.h === h) return vignetteSpeicher.c;
+  const c = document.createElement("canvas"); c.width = Math.ceil(w / 2); c.height = Math.ceil(h / 2);
+  const x = c.getContext("2d"), r = Math.hypot(c.width, c.height) / 2;
+  const g = x.createRadialGradient(c.width / 2, c.height / 2, r * 0.45, c.width / 2, c.height / 2, r);
+  g.addColorStop(0, "rgba(20,14,10,0)"); g.addColorStop(1, "rgba(20,14,10,.55)");
+  x.fillStyle = g; x.fillRect(0, 0, c.width, c.height);
+  vignetteSpeicher = { w, h, c };
+  return c;
 }

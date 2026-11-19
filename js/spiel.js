@@ -44,7 +44,7 @@ function neueRunde(figurId) {
     fig, zeit: 0, x: 0, y: 0, leben: 100, blick: 1, richtung: { x: 1, y: 0 }, laufZeit: 0, unverwundbar: 0,
     lvl: 1, xp: 0, xpNext: xpBis(1), offeneLevel: 0, kills: 0, euro: 0,
     waffen: [], ausr: {}, gegner: [], geschosse: [], funde: [], pfuetzen: [], effekte: [], texte: [],
-    spawnRest: 0, bossNr: 0, ende: null, pause: false, schaden: {}, w: null,
+    spawnRest: 0, bossNr: 0, ende: null, pause: false, schaden: {}, w: null, partikel: [], wackeln: 0, rotBlitz: 0, lvlBlitz: 0,
   };
   berechneWerte();
   G.leben = G.w.maxLeben;
@@ -100,7 +100,7 @@ function spawneGegner(typ, boss = false) {
   const faktor = 1 + (G.zeit / 60) * LEBEN_PRO_MINUTE;
   G.gegner.push({ typ, x: G.x + Math.cos(a) * r, y: G.y + Math.sin(a) * r, leben: d.leben * faktor, maxLeben: d.leben * faktor,
     r: d.r, tempo: d.tempo * (0.92 + Math.random() * 0.16), schaden: d.schaden, xp: d.xp, boss, kx: 0, ky: 0, blitz: 0, langsamBis: 0, treffer: {} });
-  if (boss) zeigeBanner(`⚠️ ${d.name} kommt!`);
+  if (boss) { zeigeBanner(`⚠️ ${d.name} kommt!`); wackeln(12); }
 }
 function spawnen(dt) {
   const welle = WELLEN[Math.min(WELLEN.length - 1, Math.floor(G.zeit / 60))];
@@ -119,13 +119,16 @@ function triff(e, schaden, quelle, stossX = 0, stossY = 0, stoss = 0) {
   e.blitz = 0.1;
   G.schaden[quelle] = (G.schaden[quelle] || 0) + schaden;
   if (stoss && !e.boss) { e.kx += stossX * stoss; e.ky += stossY * stoss; }
-  if (G.texte.length < 50) G.texte.push({ x: e.x + (Math.random() - 0.5) * 10, y: e.y - e.r, t: 0.6, text: String(Math.round(schaden)) });
+  if (G.texte.length < 50) G.texte.push({ x: e.x + (Math.random() - 0.5) * 10, y: e.y - e.r, t: 0.6, text: String(Math.round(schaden)), gross: schaden >= 40 });
+  funken(e.x - stossX * e.r * 0.5, e.y - stossY * e.r * 0.5, 2);
   ton.treffer();
   if (e.leben <= 0) besiegt(e);
 }
 function besiegt(e) {
   e.tot = true;
   G.kills++;
+  zerplatzen(e);
+  if (e.boss) { wackeln(16); ringwelle(e.x, e.y, "#ffffff", 140, 0.7); zeigeBanner(`🏆 ${GEGNER[e.typ].name} besiegt!`); }
   const art = e.xp >= 5 ? "xp3" : e.xp >= 2 ? "xp2" : "xp1";
   G.funde.push({ art, x: e.x, y: e.y, wert: e.xp });
   if (e.boss) {
@@ -283,6 +286,9 @@ function aktualisiere(dt) {
       G.leben -= Math.max(1, e.schaden - G.w.ruestung);
       G.unverwundbar = 0.5;
       G.getroffen = 0.25;
+      G.rotBlitz = 0.35;
+      wackeln(5);
+      if (G.texte.length < 50) G.texte.push({ x: G.x, y: G.y - 30, t: 0.7, text: `−${Math.max(1, e.schaden - G.w.ruestung)}`, farbe: "#ff5a63", gross: true });
       ton.autsch();
     }
   }
@@ -351,6 +357,9 @@ function aktualisiere(dt) {
 
   // Effekte, Texte
   for (const e of G.effekte) e.t -= dt;
+  aktualisierePartikel(dt);
+  if (G.rotBlitz > 0) G.rotBlitz -= dt;
+  if (G.lvlBlitz > 0) G.lvlBlitz -= dt;
   for (const t of G.texte) { t.t -= dt; t.y -= 40 * dt; }
 
   // Aufräumen
@@ -379,7 +388,8 @@ function sammle(f) {
   if (f.art.startsWith("xp")) {
     G.xp += f.wert * G.w.xp;
     ton.xp();
-    while (G.xp >= G.xpNext) { G.xp -= G.xpNext; G.lvl++; G.xpNext = xpBis(G.lvl); G.offeneLevel++; }
+    if (f.art !== "xp1") glitzer(G.x, G.y - 10, f.art === "xp3" ? "#ffe9a0" : "#bfe3ff");
+    while (G.xp >= G.xpNext) { G.xp -= G.xpNext; G.lvl++; G.xpNext = xpBis(G.lvl); G.offeneLevel++; ringwelle(G.x, G.y, "#3aa935", 110, 0.6); G.lvlBlitz = 0.6; }
     if (G.offeneLevel > 0) zeigeLevelAuswahl();
   } else if (f.art === "euro") { G.euro += f.wert; ton.muenze(); }
   else if (f.art === "wurst") { G.leben = Math.min(G.w.maxLeben, G.leben + 30); zeigeHinweis("🌭 Bratwurst! +30 Leben"); }
@@ -420,92 +430,163 @@ function oeffneKiste() {
 const ansicht = { w: 800, h: 600, dpr: 1 };
 function zeichneSpiel(x) {
   const W = ansicht.w, H = ansicht.h;
-  const ox = W / 2 - G.x, oy = H / 2 - G.y;
-  // Boden
-  const b = bodenKachel(), bg = BODEN_GROESSE;
-  const sx = ((ox % bg) + bg) % bg - bg, sy = ((oy % bg) + bg) % bg - bg;
-  for (let px = sx; px < W; px += bg) for (let py = sy; py < H; py += bg) x.drawImage(b.c, px, py, bg, bg);
+  const wx = G.wackeln ? (Math.random() - 0.5) * G.wackeln : 0, wy = G.wackeln ? (Math.random() - 0.5) * G.wackeln : 0;
+  const ox = Math.round(W / 2 - G.x + wx), oy = Math.round(H / 2 - G.y + wy);
+  const sx0 = W / 2 + wx, sy0 = H / 2 + wy;   // Spieler auf dem Bildschirm
 
-  // Farbpfützen
+  // Boden, Licht, Deko
+  const b = bodenKachel(), bg = BODEN_GROESSE;
+  const bx = ((ox % bg) + bg) % bg - bg, by = ((oy % bg) + bg) % bg - bg;
+  for (let px = bx; px < W; px += bg) for (let py = by; py < H; py += bg) x.drawImage(b.c, px, py, bg, bg);
+  zeichneLicht(x, ox, oy, W, H);
+  zeichneDeko(x, ox, oy, W, H);
+
+  // Farbpfützen (mit glänzendem Rand)
   for (const p of G.pfuetzen) {
-    const rest = Math.min(1, (p.bis - G.zeit) / 0.5);
-    x.globalAlpha = 0.55 * rest; x.fillStyle = "#3a8ee6";
-    x.beginPath(); x.ellipse(p.x + ox, p.y + oy, p.r, p.r / 1.6, 0, 0, Math.PI * 2); x.fill();
+    const rest = Math.min(1, (p.bis - G.zeit) / 0.5), px = p.x + ox, py = p.y + oy;
+    x.globalAlpha = 0.6 * rest; x.fillStyle = "#2f7fd6";
+    x.beginPath(); x.ellipse(px, py, p.r, p.r / 1.6, 0, 0, Math.PI * 2); x.fill();
+    x.globalAlpha = 0.5 * rest; x.fillStyle = "#8fc6ff";
+    x.beginPath(); x.ellipse(px - p.r * 0.3, py - p.r * 0.18, p.r * 0.35, p.r * 0.12, -0.2, 0, Math.PI * 2); x.fill();
     x.globalAlpha = 1;
   }
   // Bauschaum
   const schaum = G.waffen.find(w => w.id === "bauschaum");
   if (schaum && schaum.radius) {
-    x.globalAlpha = 0.28; x.fillStyle = "#fff6c9";
-    x.beginPath(); x.arc(W / 2, H / 2, schaum.radius, 0, Math.PI * 2); x.fill();
-    x.globalAlpha = 0.55; x.fillStyle = "#ffffff";
-    for (let i = 0; i < 10; i++) { const a = i * 0.63 + G.zeit * 0.8, r = schaum.radius * (0.55 + 0.4 * Math.sin(i * 1.7 + G.zeit)); x.beginPath(); x.arc(W / 2 + Math.cos(a) * r, H / 2 + Math.sin(a) * r, 4 + (i % 3) * 2, 0, Math.PI * 2); x.fill(); }
-    x.globalAlpha = 1;
+    const r = schaum.radius;
+    const gr = x.createRadialGradient(sx0, sy0, r * 0.2, sx0, sy0, r);
+    gr.addColorStop(0, "rgba(255,248,225,.05)"); gr.addColorStop(0.75, "rgba(255,248,225,.28)"); gr.addColorStop(1, "rgba(255,248,225,0)");
+    x.fillStyle = gr; x.beginPath(); x.arc(sx0, sy0, r, 0, Math.PI * 2); x.fill();
+    x.fillStyle = "rgba(255,255,255,.75)"; x.strokeStyle = "rgba(200,190,170,.6)"; x.lineWidth = 1;
+    for (let i = 0; i < 14; i++) {
+      const a = i * 0.449 + G.zeit * (0.6 + (i % 3) * 0.2), rr = r * (0.5 + 0.42 * Math.sin(i * 1.7 + G.zeit * 1.3));
+      x.beginPath(); x.arc(sx0 + Math.cos(a) * rr, sy0 + Math.sin(a) * rr, 3 + (i % 4) * 1.6, 0, Math.PI * 2); x.fill(); x.stroke();
+    }
   }
-  // Funde
+  // Funde (mit Glanz)
   for (const f of G.funde) {
     const s = kleinSprite(f.art), fx = f.x + ox, fy = f.y + oy;
     if (fx < -30 || fy < -30 || fx > W + 30 || fy > H + 30) continue;
-    x.drawImage(s.c, fx - s.w / 2, fy - s.h / 2 + (f.art === "kiste" ? Math.sin(G.zeit * 4) * 2 : 0), s.w, s.h);
+    const hop = f.art === "kiste" ? Math.sin(G.zeit * 4) * 2 : f.zieht ? 0 : Math.sin(G.zeit * 5 + f.x) * 1.5;
+    if (f.art === "kiste" || f.art === "xp3") {
+      x.globalAlpha = 0.35 + 0.15 * Math.sin(G.zeit * 6); x.fillStyle = f.art === "kiste" ? "#ffffff" : "#ffe9a0";
+      x.beginPath(); x.arc(fx, fy, s.w * 0.8, 0, Math.PI * 2); x.fill(); x.globalAlpha = 1;
+    }
+    x.drawImage(s.c, fx - s.w / 2, fy - s.h / 2 + hop, s.w, s.h);
+    if ((f.art === "xp3" || f.art === "euro") && Math.sin(G.zeit * 3 + f.x * 0.1) > 0.93) {
+      x.fillStyle = "#ffffff"; x.fillRect(fx + 2, fy - 7, 1.6, 6); x.fillRect(fx - 0.2, fy - 4.8, 6, 1.6);
+    }
   }
+  // Partikel am Boden (Staub) zuerst
   // Gegner (von oben nach unten, damit vordere vorne sind)
-  const sicht = G.gegner.filter(e => e.x + ox > -60 && e.x + ox < W + 60 && e.y + oy > -60 && e.y + oy < H + 60).sort((a, b) => a.y - b.y);
+  const sicht = G.gegner.filter(e => e.x + ox > -70 && e.x + ox < W + 70 && e.y + oy > -70 && e.y + oy < H + 70).sort((a, b) => a.y - b.y);
   for (const e of sicht) {
     const s = gegnerSprite(e.typ), ex = e.x + ox, ey = e.y + oy;
-    x.fillStyle = "rgba(0,0,0,.18)"; x.beginPath(); x.ellipse(ex, ey + s.h / 2 - 2, s.w * 0.36, 4 + e.r * 0.15, 0, 0, Math.PI * 2); x.fill();
+    const schritt = Math.sin(G.zeit * 14 + e.x * 0.07);
+    x.fillStyle = "rgba(0,0,0,.22)"; x.beginPath(); x.ellipse(ex, ey + s.h / 2 - 2, s.w * 0.36, 4 + e.r * 0.15, 0, 0, Math.PI * 2); x.fill();
+    if (e.boss) {
+      x.globalAlpha = 0.25 + 0.15 * Math.sin(G.zeit * 5); x.fillStyle = "#e30613";
+      x.beginPath(); x.ellipse(ex, ey + s.h / 2 - 2, s.w * 0.6, 12, 0, 0, Math.PI * 2); x.fill(); x.globalAlpha = 1;
+    }
     const bild = e.blitz > 0 ? weissSprite("gegner-" + e.typ, s) : s;
-    const wackeln = Math.sin(G.zeit * 12 + e.x * 0.1) * 1.5;
-    x.save(); x.translate(ex, ey + wackeln);
-    if (e.x > G.x) x.scale(-1, 1);
+    x.save(); x.translate(ex, ey - Math.abs(schritt) * 2);
+    x.scale((e.x > G.x ? -1 : 1) * (1 + schritt * 0.03), 1 - schritt * 0.03);
     x.drawImage(bild.c, -s.w / 2, -s.h / 2, s.w, s.h);
     x.restore();
     if (e.boss) {
-      const bw = s.w; x.fillStyle = "rgba(0,0,0,.5)"; x.fillRect(ex - bw / 2, ey - s.h / 2 - 12, bw, 6);
-      x.fillStyle = "#d9442b"; x.fillRect(ex - bw / 2, ey - s.h / 2 - 12, bw * Math.max(0, e.leben / e.maxLeben), 6);
+      const bw = Math.max(60, s.w); x.fillStyle = "rgba(0,0,0,.55)"; rundRechteck(x, ex - bw / 2 - 2, ey - s.h / 2 - 16, bw + 4, 9, 4); x.fill();
+      x.fillStyle = "#e30613"; rundRechteck(x, ex - bw / 2, ey - s.h / 2 - 14, bw * Math.max(0, e.leben / e.maxLeben), 5, 2.5); x.fill();
     }
   }
+  // Besiegte Gegner: kurz aufblähen und verblassen
+  for (const t of G.effekte) if (t.art === "tod") {
+    const s = weissSprite("gegner-" + t.typ, gegnerSprite(t.typ)), a = t.t / t.dauer;
+    x.globalAlpha = a * 0.9;
+    x.save(); x.translate(t.x + ox, t.y + oy); x.scale((t.links ? -1 : 1) * (1 + (1 - a) * 0.5), 1 + (1 - a) * 0.5);
+    x.drawImage(s.c, -s.w / 2, -s.h / 2, s.w, s.h); x.restore();
+    x.globalAlpha = 1;
+  }
+
   // Spieler
-  const schritt = el => Math.floor(G.laufZeit * 8) % 2;
-  const ps = figurSprite(G.fig, Math.hypot(eingabe.x, eingabe.y) > 0.1 ? schritt() : 0);
-  x.fillStyle = "rgba(0,0,0,.22)"; x.beginPath(); x.ellipse(W / 2, H / 2 + 22, 14, 5, 0, 0, Math.PI * 2); x.fill();
-  x.save(); x.translate(W / 2, H / 2 - 4);
+  const laeuft = Math.hypot(eingabe.x, eingabe.y) > 0.1;
+  const bildNr = laeuft ? Math.floor(G.laufZeit * 8) % 2 : 0, ps = figurSprite(G.fig, bildNr);
+  const hop = laeuft ? Math.abs(Math.sin(G.laufZeit * 12)) * 2.5 : Math.sin(G.zeit * 3) * 0.6;
+  x.fillStyle = "rgba(0,0,0,.25)"; x.beginPath(); x.ellipse(sx0, sy0 + 22, 15, 5, 0, 0, Math.PI * 2); x.fill();
+  if (G.lvlBlitz > 0) { x.globalAlpha = G.lvlBlitz; x.fillStyle = "#3aa935"; x.beginPath(); x.ellipse(sx0, sy0 + 20, 26, 9, 0, 0, Math.PI * 2); x.fill(); x.globalAlpha = 1; }
+  x.save(); x.translate(sx0, sy0 - 4 - hop);
   if (G.blick < 0) x.scale(-1, 1);
-  if (G.getroffen > 0 && Math.floor(G.zeit * 30) % 2) x.globalAlpha = 0.45;
-  x.drawImage(ps.c, -ps.w / 2, -ps.h / 2, ps.w, ps.h);
+  const bild = G.getroffen > 0 && Math.floor(G.zeit * 30) % 2 ? weissSprite(`figur-${G.fig.id}-${bildNr}`, ps) : ps;
+  x.drawImage(bild.c, -ps.w / 2, -ps.h / 2, ps.w, ps.h);
   x.restore();
   // Lebensbalken unter dem Spieler
-  x.fillStyle = "rgba(0,0,0,.45)"; x.fillRect(W / 2 - 20, H / 2 + 28, 40, 5);
-  x.fillStyle = G.leben / G.w.maxLeben > 0.3 ? "#4caf50" : "#d9442b"; x.fillRect(W / 2 - 20, H / 2 + 28, 40 * G.leben / G.w.maxLeben, 5);
+  const anteil = Math.max(0, G.leben / G.w.maxLeben);
+  x.fillStyle = "rgba(0,0,0,.55)"; rundRechteck(x, sx0 - 22, sy0 + 27, 44, 7, 3.5); x.fill();
+  x.fillStyle = anteil > 0.3 ? "#3aa935" : "#e30613"; rundRechteck(x, sx0 - 21, sy0 + 28, 42 * anteil, 5, 2.5); x.fill();
 
-  // Kreissägen
+  // Kreissägen mit Bewegungsspur
   for (const w of G.waffen) if (w.blaetter) {
     const s = kleinSprite("saegeblatt");
-    for (const [bx, by, r] of w.blaetter) { x.save(); x.translate(bx + ox, by + oy); x.rotate(G.zeit * 18); x.drawImage(s.c, -r, -r, r * 2, r * 2); x.restore(); }
+    for (const [bxx, byy, r] of w.blaetter) {
+      x.globalAlpha = 0.25; x.strokeStyle = "#ffffff"; x.lineWidth = r * 0.9;
+      const R = Math.hypot(bxx - G.x, byy - G.y), a = Math.atan2(byy - G.y, bxx - G.x);
+      x.beginPath(); x.arc(sx0, sy0, R, a - 0.5, a); x.stroke(); x.globalAlpha = 1;
+      x.save(); x.translate(bxx + ox, byy + oy); x.rotate(G.zeit * 18); x.drawImage(s.c, -r, -r, r * 2, r * 2); x.restore();
+    }
   }
-  // Geschosse
+  // Geschosse (mit Leuchtspur)
   for (const g of G.geschosse) {
     const s = kleinSprite(g.art), gx = g.x + ox, gy = g.y + oy;
+    if (gx < -40 || gy < -40 || gx > W + 40 || gy > H + 40) continue;
+    if (g.art === "schraube" || g.art === "nagel") {
+      const v = Math.hypot(g.vx, g.vy) || 1, lx = g.vx / v, ly = g.vy / v;
+      const gr = x.createLinearGradient(gx, gy, gx - lx * 26, gy - ly * 26);
+      gr.addColorStop(0, "rgba(255,255,255,.75)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+      x.strokeStyle = gr; x.lineWidth = 3; x.beginPath(); x.moveTo(gx, gy); x.lineTo(gx - lx * 26, gy - ly * 26); x.stroke();
+    }
+    if (g.art === "hammer") {
+      for (let i = 1; i <= 2; i++) {
+        x.globalAlpha = 0.18 / i; x.save(); x.translate(gx - g.vx * 0.02 * i, gy - g.vy * 0.02 * i); x.rotate(g.dreh - i * 0.5); x.scale(g.groesse, g.groesse);
+        x.drawImage(s.c, -s.w / 2, -s.h / 2, s.w, s.h); x.restore();
+      }
+      x.globalAlpha = 1;
+    }
     x.save(); x.translate(gx, gy);
     if (g.art === "hammer") { x.rotate(g.dreh); x.scale(g.groesse, g.groesse); }
-    else if (g.art === "eimer") x.rotate(g.alter * 10);
+    else if (g.art === "eimer") { x.rotate(g.alter * 10); }
     else x.rotate(Math.atan2(g.vy, g.vx));
     x.drawImage(s.c, -s.w / 2, -s.h / 2, s.w, s.h);
     x.restore();
+    if (g.art === "eimer") { x.fillStyle = "rgba(0,0,0,.18)"; x.beginPath(); x.ellipse(g.zx + ox, g.zy + oy, 10, 4, 0, 0, Math.PI * 2); x.fill(); }
   }
-  // Laser
+  // Laser (leuchtend)
   for (const e of G.effekte) if (e.art === "laser") {
     const a = e.t / e.dauer;
     x.save(); x.translate(e.x + ox, e.y + oy); x.rotate(Math.atan2(e.ry, e.rx));
-    x.globalAlpha = a; x.fillStyle = "rgba(255,40,40,.35)"; x.fillRect(-e.laenge, -e.breite, e.laenge * 2, e.breite * 2);
-    x.fillStyle = "#ff3b3b"; x.fillRect(-e.laenge, -e.breite / 4, e.laenge * 2, e.breite / 2);
+    x.globalCompositeOperation = "lighter";
+    x.globalAlpha = a * 0.5; x.fillStyle = "#ff2030"; x.fillRect(-e.laenge, -e.breite, e.laenge * 2, e.breite * 2);
+    x.globalAlpha = a; x.fillStyle = "#ff6070"; x.fillRect(-e.laenge, -e.breite / 3, e.laenge * 2, e.breite / 1.5);
+    x.fillStyle = "#ffffff"; x.fillRect(-e.laenge, -1.2, e.laenge * 2, 2.4);
     x.restore(); x.globalAlpha = 1;
   }
+  zeichnePartikel(x, ox, oy);
+
   // Schadenszahlen
-  x.font = "bold 13px Nunito, sans-serif"; x.textAlign = "center";
+  x.textAlign = "center";
   for (const t of G.texte) {
+    const gross = t.gross ? 17 : 13;
+    x.font = `900 ${gross}px Nunito, sans-serif`;
     x.globalAlpha = Math.min(1, t.t * 2.5);
-    x.lineWidth = 3; x.strokeStyle = "rgba(0,0,0,.7)"; x.strokeText(t.text, t.x + ox, t.y + oy);
-    x.fillStyle = "#ffffff"; x.fillText(t.text, t.x + ox, t.y + oy);
+    x.lineWidth = 3.5; x.strokeStyle = "rgba(20,10,10,.8)"; x.strokeText(t.text, t.x + ox, t.y + oy);
+    x.fillStyle = t.farbe || "#ffffff"; x.fillText(t.text, t.x + ox, t.y + oy);
   }
   x.globalAlpha = 1;
+
+  // Bildschirmränder, roter Blitz bei Treffer, grüner bei Level-Aufstieg
+  x.drawImage(vignette(W, H), 0, 0, W, H);
+  if (G.rotBlitz > 0) {
+    const gr = x.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.hypot(W, H) / 2);
+    gr.addColorStop(0, "rgba(227,6,19,0)"); gr.addColorStop(1, `rgba(227,6,19,${0.55 * G.rotBlitz / 0.35})`);
+    x.fillStyle = gr; x.fillRect(0, 0, W, H);
+  }
+  if (G.lvlBlitz > 0) { x.fillStyle = `rgba(255,255,255,${G.lvlBlitz * 0.25})`; x.fillRect(0, 0, W, H); }
 }
