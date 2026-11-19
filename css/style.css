@@ -1,0 +1,172 @@
+/* =====================================================
+   LADENSCHLUSS – im "tuum"-Baumarkt: Rot, Weiß, Zollstock-Gelb und Grün
+   ===================================================== */
+:root {
+  --orange: #e30613; --orange-dunkel: #a3000e; --gelb: #6fd36a; --rot: #e30613; --gruen: #3aa935;
+  --dunkel: #1f2328; --stahl: #2e343b; --stahl-hell: #3d454e; --text: #f4efe6; --mut: #b9b0a2;
+  --titel: "Bungee", "Arial Black", sans-serif; --schrift: "Nunito", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--dunkel); color: var(--text); font-family: var(--schrift); }
+body { user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+#leinwand { position: fixed; inset: 0; display: block; touch-action: none; }
+[hidden] { display: none !important; }
+.klein { font-size: 0.85rem; color: var(--mut); font-weight: 600; }
+
+/* ----- Knöpfe ----- */
+.knopf {
+  font: 900 1rem var(--schrift); color: #ffffff; cursor: pointer;
+  padding: 12px 22px; border: 0; border-radius: 12px;
+  background: linear-gradient(180deg, #ff3b47, var(--orange) 55%, var(--orange-dunkel));
+  box-shadow: 0 4px 0 #6b0009, 0 8px 18px rgba(0,0,0,.35); transition: transform .08s;
+}
+.knopf:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b0009, 0 4px 10px rgba(0,0,0,.35); }
+.knopf:disabled { filter: grayscale(.8) brightness(.7); cursor: default; }
+.knopf.gross { font-size: 1.2rem; padding: 14px 28px; }
+.knopf.leise { background: linear-gradient(180deg, #59626d, var(--stahl-hell)); color: var(--text); box-shadow: 0 4px 0 #15181c, 0 8px 18px rgba(0,0,0,.3); }
+.knopf.klein-knopf { padding: 8px 12px; font-size: .9rem; white-space: nowrap; }
+.knopfSpalte { display: flex; flex-direction: column; gap: 14px; width: min(320px, 100%); }
+.knopfZeile { display: flex; gap: 12px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+
+/* ----- Bildschirme ----- */
+.schirm {
+  position: fixed; inset: 0; z-index: 10; overflow-y: auto;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 16px;
+  padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+}
+/* mittig, aber oben nichts abschneiden, wenn gescrollt werden muss */
+.schirm > :first-child { margin-top: auto; }
+.schirm > :last-child { margin-bottom: auto; }
+.schirm h2, .karte h2 { font-family: var(--titel); font-weight: 400; color: var(--gelb); margin: 0; text-align: center; letter-spacing: 1px; text-shadow: 0 3px 0 rgba(0,0,0,.5); }
+.titelInfo { margin: 0; text-align: center; color: var(--mut); font-weight: 700; }
+.steuerung { margin: 6px 0 0; text-align: center; font-size: .8rem; color: var(--mut); line-height: 1.5; }
+
+/* Schild mit Schrauben */
+.schild {
+  position: relative; width: min(560px, 100%); padding: 22px 20px 20px; text-align: center;
+  background: linear-gradient(180deg, #ff2a36, var(--rot) 60%, #c4000f); border-radius: 18px;
+  border: 4px solid #6b0009; box-shadow: 0 10px 0 #4a0006, 0 20px 40px rgba(0,0,0,.5);
+  animation: schildRein .6s cubic-bezier(.2,1.4,.4,1) both;
+}
+@keyframes schildRein { from { transform: translateY(-40px) rotate(-4deg); opacity: 0; } }
+.schild h1 { margin: 4px 0 0; font-family: var(--titel); font-weight: 400; font-size: clamp(2.2rem, 10vw, 4.4rem); line-height: 1; color: #ffffff; text-shadow: 0 4px 0 #6b0009, 0 8px 14px rgba(0,0,0,.3); letter-spacing: 2px; }
+/* tuum-Wortmarke: weiße, runde Kleinbuchstaben */
+.tuumLogo { display: inline-flex; align-items: baseline; gap: 6px; padding: 2px 16px 6px; border-radius: 14px; background: #ffffff; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
+.tuumLogo b { font: 900 2.3rem/1 var(--schrift); color: var(--rot); letter-spacing: -1px; }
+.tuumLogo span { font: 900 .85rem var(--schrift); color: var(--gruen); text-transform: uppercase; letter-spacing: 1px; }
+/* Zollstock-Leiste */
+.zollstock { height: 14px; margin: 14px -20px 0; background: repeating-linear-gradient(90deg, #ffffff 0 2px, transparent 2px 12px) top / 100% 6px no-repeat, var(--gruen);
+  border-top: 2px solid #1f6b1c; border-bottom: 2px solid #1f6b1c; }
+.zollstock::after { content: ""; display: block; height: 100%; background: repeating-linear-gradient(90deg, transparent 0 59px, #ffffff 59px 61px); }
+.unterzeile { margin-top: 12px; display: inline-block; padding: 4px 14px; background: #1f6b1c; border-radius: 8px; color: #fff; font-weight: 900; }
+.spruch { margin-top: 8px; font-weight: 900; font-style: italic; color: #ffe1e3; font-size: .95rem; }
+.schraube { position: absolute; z-index: 1; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #e9edf1, #8f9aa6); box-shadow: inset 0 -1px 2px rgba(0,0,0,.5); }
+.schraube::after { content: ""; position: absolute; left: 2px; right: 2px; top: 6px; height: 2px; background: #5b636c; transform: rotate(35deg); }
+.s1 { top: 10px; left: 10px; } .s2 { top: 10px; right: 10px; } .s3 { bottom: 10px; left: 10px; } .s4 { bottom: 10px; right: 10px; }
+
+/* Figuren */
+.figurenListe { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; max-width: 720px; }
+.figurKarte {
+  width: min(200px, 44vw); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px; text-align: center;
+  font: inherit; color: var(--text); background: var(--stahl); border: 3px solid var(--stahl-hell); border-radius: 16px; cursor: pointer;
+}
+.figurKarte b { font-family: var(--titel); font-weight: 400; font-size: 1.2rem; color: #ff4b55; }
+.figurKarte.gewaehlt { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(227,6,19,.35), 0 10px 24px rgba(0,0,0,.4); }
+.figurKarte.gesperrt { opacity: .5; cursor: default; }
+.figurBild { width: 80px; height: 100px; }
+
+/* Werkstatt */
+.werkstattListe { display: grid; gap: 10px; width: min(560px, 100%); }
+.werkKarte { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--stahl); border: 2px solid var(--stahl-hell); border-radius: 14px; }
+.werkIcon { font-size: 2rem; }
+.werkText { flex: 1; min-width: 0; }
+.punkte { color: var(--gelb); letter-spacing: 3px; font-size: .9rem; margin-top: 2px; }
+
+/* ----- Overlays (Level, Pause, Ende) ----- */
+.overlay { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,12,9,.62); backdrop-filter: blur(2px); }
+.karte {
+  width: min(460px, 100%); max-height: 100%; overflow-y: auto; padding: 20px 18px; text-align: center;
+  background: linear-gradient(180deg, var(--stahl-hell), var(--stahl)); border: 3px solid var(--orange); border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.6); animation: karteRein .25s ease-out both;
+}
+@keyframes karteRein { from { transform: scale(.9); opacity: 0; } }
+.levelListe { display: grid; gap: 10px; margin-top: 12px; }
+.levelKarte {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; text-align: left; cursor: pointer;
+  font: inherit; color: var(--text); background: var(--dunkel); border: 2px solid var(--stahl-hell); border-radius: 14px; transition: border-color .1s, transform .1s;
+}
+.levelKarte:hover, .levelKarte:focus-visible { border-color: var(--orange); transform: translateY(-2px); }
+.levelIcon { font-size: 2rem; width: 44px; text-align: center; }
+.neu, .stufe { display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 6px; font-size: .7rem; font-weight: 900; vertical-align: 2px; }
+.neu { background: var(--gruen); color: #ffffff; }
+.stufe { background: var(--stahl-hell); color: var(--text); }
+.ausruestungListe { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; text-align: left; font-weight: 700; }
+.ausruestungListe div { padding: 6px 8px; background: var(--dunkel); border-radius: 8px; }
+.ausruestungListe b { color: var(--gelb); float: right; }
+.werteGitter { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.werteGitter div { padding: 8px; background: var(--dunkel); border-radius: 10px; }
+.werteGitter span { display: block; font-size: .75rem; color: var(--mut); font-weight: 700; }
+.werteGitter b { font-family: var(--titel); font-weight: 400; font-size: 1.3rem; color: var(--gelb); }
+.karte h3 { margin: 14px 0 6px; font-size: .9rem; color: var(--mut); }
+.schadenListe div { display: flex; justify-content: space-between; padding: 4px 8px; font-weight: 700; }
+.schadenListe span { color: var(--gelb); }
+
+/* ----- Anzeige oben ----- */
+#hud { position: fixed; left: 0; right: 0; top: 0; z-index: 5; padding: max(6px, env(safe-area-inset-top)) 10px 0; pointer-events: none; }
+.xpBalken { position: relative; height: 18px; background: rgba(0,0,0,.55); border: 2px solid #000; border-radius: 9px; overflow: hidden; }
+#xpFuellung { height: 100%; width: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.75) 0 1.5px, transparent 1.5px 10px) top / 100% 5px no-repeat, var(--gruen); transition: width .15s; }
+#hudLevel { position: absolute; right: 8px; top: 0; font-size: .75rem; font-weight: 900; line-height: 14px; text-shadow: 0 1px 2px #000; }
+.hudZeile { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-top: 6px; }
+.hudWaffen { display: flex; flex-wrap: wrap; gap: 3px; max-width: 40%; }
+.hudWaffen span { position: relative; width: 28px; height: 28px; display: grid; place-items: center; font-size: 1rem; background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.2); border-radius: 7px; }
+.hudWaffen span.ausr { border-color: rgba(242,194,48,.35); }
+.hudWaffen i { position: absolute; right: 1px; bottom: -2px; font-style: normal; font-size: .6rem; font-weight: 900; text-shadow: 0 1px 2px #000; }
+.hudZeit { font-family: var(--titel); font-size: 1.6rem; text-shadow: 0 2px 0 #000, 0 0 8px rgba(0,0,0,.6); }
+.hudZeit.knapp { color: var(--gelb); animation: pochen 1s infinite; }
+@keyframes pochen { 50% { transform: scale(1.1); } }
+.hudRechts { display: flex; align-items: center; gap: 10px; font-weight: 800; text-shadow: 0 1px 3px #000; }
+#pauseKnopf { pointer-events: auto; width: 38px; height: 38px; border-radius: 10px; border: 2px solid rgba(255,255,255,.3); background: rgba(0,0,0,.5); color: #fff; font-size: 1rem; cursor: pointer; }
+
+/* Meldungen */
+#banner { position: fixed; left: 0; right: 0; top: 22%; z-index: 6; text-align: center; pointer-events: none; font-family: var(--titel); font-size: clamp(1.4rem, 6vw, 2.4rem); color: var(--gelb); text-shadow: 0 3px 0 #000, 0 0 20px rgba(227,6,19,.8); opacity: 0; }
+#banner.an { animation: banner 3s ease-out; }
+@keyframes banner { 0% { opacity: 0; transform: scale(1.6); } 12% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
+#hinweise { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 6; display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; width: min(92vw, 460px); }
+.hinweis { padding: 8px 14px; border-radius: 10px; background: rgba(20,16,12,.85); border: 2px solid var(--orange); font-weight: 800; text-align: center; animation: hinweis 3.2s ease-out both; }
+@keyframes hinweis { 0% { opacity: 0; transform: translateY(10px); } 10%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) { .schild, .karte, #banner.an, .hinweis { animation-duration: .01s; } }
+
+/* ----- Startbildschirm (js/splash.js) ----- */
+#splash {
+  position: fixed; inset: 0; z-index: 100; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: calc(20px + env(safe-area-inset-top)) 24px calc(20px + env(safe-area-inset-bottom));
+  background: radial-gradient(90% 60% at 50% 38%, #ff3a45 0%, #e30613 55%, #a3000e 100%);
+  transition: opacity .6s ease, visibility .6s;
+}
+#splash::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0 22px, transparent 22px 44px); }
+#splash.weg { opacity: 0; visibility: hidden; }
+#splash.weg .splashInhalt { transform: scale(1.05); }
+.splashInhalt { position: relative; display: flex; flex-direction: column; align-items: center; width: min(100%, 340px); transition: transform .6s ease; animation: splashRein .8s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes splashRein { from { opacity: 0; transform: translateY(20px) scale(.9); } }
+.splashSymbol { width: 132px; height: 132px; border-radius: 30px; box-shadow: 0 0 0 4px #ffffff, 0 16px 34px rgba(0,0,0,.4); animation: splashWackeln 2.6s ease-in-out infinite; }
+@keyframes splashWackeln { 50% { transform: translateY(-7px) rotate(-2deg); } }
+.splashLogo { margin-top: 24px; display: inline-flex; align-items: baseline; gap: 6px; padding: 2px 14px 5px; border-radius: 12px; background: #ffffff; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
+.splashLogo b { font: 900 1.7rem/1 var(--schrift); color: var(--rot); letter-spacing: -1px; }
+.splashLogo span { font: 900 .7rem var(--schrift); color: var(--gruen); text-transform: uppercase; letter-spacing: 1px; }
+.splashTitel { margin-top: 12px; font-family: var(--titel); font-size: clamp(2rem, 11vw, 2.8rem); line-height: 1; color: #ffffff; text-shadow: 0 4px 0 #6b0009, 0 8px 16px rgba(0,0,0,.35); letter-spacing: 1px; }
+.splashUnter { margin-top: 6px; font-weight: 900; color: #ffe1e3; }
+.splashBalken { position: relative; width: 100%; height: 22px; margin-top: 30px; border-radius: 6px; overflow: hidden; background: rgba(0,0,0,.28); box-shadow: inset 0 2px 4px rgba(0,0,0,.4), 0 0 0 3px #ffffff; }
+.splashBalken div {
+  height: 100%; width: 0;
+  background: repeating-linear-gradient(90deg, #ffffff 0 2px, transparent 2px 10px) top / 100% 7px no-repeat,
+              repeating-linear-gradient(90deg, transparent 0 48px, #ffffff 48px 50px) top / 100% 13px no-repeat, var(--gruen);
+  animation: splashLaden 2.8s cubic-bezier(.45,.05,.35,1) forwards;
+}
+@keyframes splashLaden { 0% { width: 0; } 35% { width: 42%; } 60% { width: 60%; } 100% { width: 100%; } }
+.splashStatus { min-height: 22px; margin-top: 12px; font-weight: 800; color: #ffffff; }
+.splashFuss { position: absolute; left: 0; right: 0; bottom: calc(26px + env(safe-area-inset-bottom)); text-align: center; animation: splashRein 1s .3s ease-out both; }
+.splashVon { font-weight: 900; color: #ffffff; font-size: 1rem; }
+.splashVersion { display: inline-block; margin-top: 6px; padding: 1px 10px; border-radius: 999px; background: var(--gruen); color: #ffffff; font-size: .75rem; font-weight: 900; }
+@media (prefers-reduced-motion: reduce) { .splashSymbol { animation: none; } }

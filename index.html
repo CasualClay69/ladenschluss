@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Ladenschluss – Überleben im tuum-Baumarkt</title>
+<meta name="theme-color" content="#e30613">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ladenschluss">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/version.js" defer></script>
+<script src="js/splash.js" defer></script>
+<script src="js/daten.js" defer></script>
+<script src="js/speicher.js" defer></script>
+<script src="js/ton.js" defer></script>
+<script src="js/zeichnen.js" defer></script>
+<script src="js/eingabe.js" defer></script>
+<script src="js/spiel.js" defer></script>
+<script src="js/ui.js" defer></script>
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<!-- Startbildschirm (3 Sekunden, siehe js/splash.js) -->
+<div id="splash" aria-hidden="true">
+  <div class="splashInhalt">
+    <img class="splashSymbol" src="icons/icon.svg" alt="">
+    <div class="splashLogo"><b>tuum</b><span>Baumarkt</span></div>
+    <div class="splashTitel">LADENSCHLUSS</div>
+    <div class="splashUnter">Überleben im tuum-Baumarkt</div>
+    <div class="splashBalken"><div></div></div>
+    <div class="splashStatus" id="splashStatus">Regale werden aufgefüllt …</div>
+  </div>
+  <div class="splashFuss">
+    <div class="splashVon">Ein Spiel von Stefan R.</div>
+    <div class="splashVersion" id="splashVersion">Version</div>
+  </div>
+</div>
+<canvas id="leinwand"></canvas>
+
+<!-- Anzeige während der Runde -->
+<div id="hud" hidden>
+  <div class="xpBalken"><div id="xpFuellung"></div><span id="hudLevel">Lv 1</span></div>
+  <div class="hudZeile">
+    <div id="hudWaffen" class="hudWaffen"></div>
+    <div id="hudZeit" class="hudZeit">15:00</div>
+    <div class="hudRechts"><span>💀 <b id="hudKills">0</b></span><span>💶 <b id="hudEuro">0</b></span><button id="pauseKnopf" type="button" aria-label="Pause">⏸</button></div>
+  </div>
+</div>
+<div id="banner"></div>
+<div id="hinweise"></div>
+
+<!-- Titel -->
+<section id="titel" class="schirm" hidden>
+  <div class="schild">
+    <i class="schraube s1"></i><i class="schraube s2"></i><i class="schraube s3"></i><i class="schraube s4"></i>
+    <div class="tuumLogo"><b>tuum</b><span>Baumarkt</span></div>
+    <h1>LADEN&shy;SCHLUSS</h1>
+    <div class="spruch">„Respekt, wer's überlebt!“</div>
+    <div class="zollstock"></div>
+  </div>
+  <p class="titelInfo" id="titelRekord"></p>
+  <div class="knopfSpalte">
+    <button id="spielenKnopf" class="knopf gross" type="button">▶ Schicht beginnen</button>
+    <button id="werkstattKnopf" class="knopf" type="button">🔧 Werkstatt · 💶 <span id="titelEuro">0</span></button>
+    <button id="tonKnopf" class="knopf leise" type="button">🔊 Ton an</button>
+  </div>
+  <p class="steuerung">Laufen: WASD / Pfeiltasten · am Handy: irgendwo tippen und ziehen<br>Die Werkzeuge greifen von selbst an.</p>
+</section>
+
+<!-- Figurenwahl -->
+<section id="figuren" class="schirm" hidden>
+  <h2>Wer hat heute Schicht im tuum?</h2>
+  <div id="figurenListe" class="figurenListe"></div>
+  <div class="knopfZeile"><button class="knopf leise" type="button" data-zurueck>← Zurück</button><button id="figurStart" class="knopf gross" type="button">Los geht's!</button></div>
+</section>
+
+<!-- Werkstatt -->
+<section id="werkstatt" class="schirm" hidden>
+  <h2>🔧 Werkstatt</h2>
+  <p class="titelInfo">Dauerhafte Verbesserungen für alle Runden · 💶 <b id="werkstattEuro">0</b> €</p>
+  <div id="werkstattListe" class="werkstattListe"></div>
+  <div class="knopfZeile"><button class="knopf leise" type="button" data-zurueck>← Zurück</button></div>
+</section>
+
+<!-- Level-Auswahl -->
+<section id="levelup" class="overlay" hidden>
+  <div class="karte">
+    <h2 id="levelTitel">Level 2!</h2>
+    <p class="klein">Such dir etwas aus:</p>
+    <div id="levelListe" class="levelListe"></div>
+  </div>
+</section>
+
+<!-- Pause -->
+<section id="pause" class="overlay" hidden>
+  <div class="karte">
+    <h2>⏸ Kaffeepause</h2>
+    <div id="pauseInhalt"></div>
+    <div class="knopfZeile"><button id="aufgebenKnopf" class="knopf leise" type="button">Aufgeben</button><button id="weiterKnopf" class="knopf gross" type="button">Weiter</button></div>
+  </div>
+</section>
+
+<!-- Ende -->
+<section id="ende" class="overlay" hidden>
+  <div class="karte">
+    <h2 id="endeTitel"></h2>
+    <p id="endeText" class="klein"></p>
+    <div id="endeWerte"></div>
+    <div class="knopfZeile"><button id="menueKnopf" class="knopf leise" type="button">Menü</button><button id="nochmalKnopf" class="knopf gross" type="button">Nochmal!</button></div>
+  </div>
+</section>
+</body>
+</html>
