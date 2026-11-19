@@ -4,7 +4,7 @@
 //  APP_DATEIEN: alle Dateien, die für das Offline-Spielen gespeichert werden (sw.js).
 //  Neue Dateien hier eintragen!
 // =====================================================
-const APP_VERSION = "1.0";
+const APP_VERSION = "1.1";
 const APP_DATEIEN = [
   "./", "index.html", "manifest.webmanifest", "css/style.css",
   "js/version.js", "js/splash.js", "js/daten.js", "js/speicher.js", "js/ton.js", "js/zeichnen.js",
