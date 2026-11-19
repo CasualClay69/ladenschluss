@@ -70,16 +70,28 @@ function figurSprite(fig, schritt) {
     rundRechteck(x, 12, 22, 16, 15, 4); fuellen(x, f.schuerze);
     rundRechteck(x, 14.5, 25, 11, 6, 2); fuellen(x, "#ffffff", 1.2);   // tuum-Abzeichen
     x.fillStyle = "#e30613"; x.font = "900 4.6px Nunito, sans-serif"; x.textAlign = "center"; x.fillText("tuum", 20, 29.6); x.textAlign = "left";
-    // Kopf
-    kreis(x, 20, 12, 9.5); fuellen(x, f.haut);
-    x.beginPath(); x.arc(20, 11, 9.5, Math.PI * 1.05, Math.PI * 1.95); x.lineTo(27, 7); fuellen(x, f.haar, 0);
-    // Mütze mit Schirm
-    x.beginPath(); x.arc(20, 9, 9.6, Math.PI, 0); x.closePath(); fuellen(x, f.muetze);
-    rundRechteck(x, 18, 7, 15, 3.6, 1.8); fuellen(x, f.muetze);
-    // Gesicht
-    kreis(x, 17, 13, 1.4); x.fillStyle = LINIE; x.fill();
-    kreis(x, 23.5, 13, 1.4); x.fill();
-    x.beginPath(); x.arc(20.5, 15.5, 3, 0.2, Math.PI - 0.2); x.lineWidth = 1.4; x.strokeStyle = LINIE; x.stroke();
+    // Ohren
+    kreis(x, 10.7, 12.5, 2.2); fuellen(x, f.haut, 1.4);
+    kreis(x, 29.3, 12.5, 2.2); fuellen(x, f.haut, 1.4);
+    // Kopf mit Glatze (ein kleiner Glanzpunkt oben)
+    kreis(x, 20, 11.5, 9.5); fuellen(x, f.haut);
+    x.fillStyle = "rgba(255,255,255,.5)"; x.beginPath(); x.ellipse(16.2, 5.6, 3.2, 1.5, -0.45, 0, Math.PI * 2); x.fill();
+    // Kurzer Vollbart: am Kiefer entlang und unter dem Kinn, dazu ein Schnurrbart
+    const bart = f.bart || f.haar;
+    x.beginPath(); x.moveTo(10.8, 12.2); x.quadraticCurveTo(11.2, 22.8, 20, 23.4); x.quadraticCurveTo(28.8, 22.8, 29.2, 12.2);
+    x.quadraticCurveTo(27.6, 18.6, 23.5, 18.4); x.quadraticCurveTo(20, 17.4, 16.5, 18.4); x.quadraticCurveTo(12.4, 18.6, 10.8, 12.2); x.closePath(); fuellen(x, bart, 1.3);
+    x.beginPath(); x.moveTo(16.2, 16.6); x.quadraticCurveTo(20, 14.6, 23.8, 16.6); x.quadraticCurveTo(20, 17.6, 16.2, 16.6); x.closePath(); fuellen(x, bart, 1);
+    x.beginPath(); x.moveTo(18.3, 19.1); x.quadraticCurveTo(20, 20.1, 21.7, 19.1); x.lineWidth = 1.2; x.strokeStyle = "#8a4a3a"; x.stroke();   // Mund
+    // Augen
+    kreis(x, 17, 12, 1.3); x.fillStyle = LINIE; x.fill();
+    kreis(x, 23.5, 12, 1.3); x.fill();
+    // Brille (dunkelbraun)
+    const brille = f.brille || "#4a2e1c";
+    x.strokeStyle = brille; x.lineWidth = 1.3;
+    rundRechteck(x, 14.1, 9.9, 5.8, 4.4, 1.6); x.stroke();
+    rundRechteck(x, 20.6, 9.9, 5.8, 4.4, 1.6); x.stroke();
+    x.beginPath(); x.moveTo(19.9, 11.6); x.quadraticCurveTo(20.25, 11, 20.6, 11.6); x.moveTo(14.1, 11.4); x.lineTo(11.4, 11); x.moveTo(26.4, 11.4); x.lineTo(28.6, 11); x.stroke();
+    x.fillStyle = "rgba(255,255,255,.35)"; x.fillRect(15, 10.7, 1.4, 1); x.fillRect(21.5, 10.7, 1.4, 1);
   });
 }
 

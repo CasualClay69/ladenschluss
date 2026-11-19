@@ -9,7 +9,7 @@ const SPIEL_DAUER = 15 * 60;   // Sekunden bis Ladenschluss = gewonnen
 // ----- Spielbare Figuren -----
 const FIGUREN = [
   { id: "stefan", name: "Stefan", text: "Kennt jeden Gang im Baumarkt. Startet mit dem Akkuschrauber.",
-    start: "akkuschrauber", farbe: { schuerze: "#e30613", hose: "#3a4a5c", muetze: "#3aa935", haut: "#f2c9a0", haar: "#6b4a2f" },
+    start: "akkuschrauber", farbe: { schuerze: "#e30613", hose: "#3a4a5c", haut: "#f2c9a0", bart: "#4a2e1c", brille: "#4a2e1c" },
     bonus: {} },
   { id: "bald1", name: "???", text: "Kommt bald …", gesperrt: true },
   { id: "bald2", name: "???", text: "Kommt bald …", gesperrt: true },

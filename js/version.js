@@ -4,9 +4,9 @@
 //  APP_DATEIEN: alle Dateien, die für das Offline-Spielen gespeichert werden (sw.js).
 //  Neue Dateien hier eintragen!
 // =====================================================
-const APP_VERSION = "1.5";
+const APP_VERSION = "1.6";
 // Kurz, was neu ist – steht im Fenster "Neue Version!" (bitte keine " im Text)
-const APP_NEU = "Grafiken repariert: Nichts ist mehr abgeschnitten – Mütze, Henkel, Pinsel, Farbfächer und Bodenschilder sind jetzt vollständig.";
+const APP_NEU = "Stefan hat ein neues Aussehen: Glatze, dunkelbraune Brille und kurzer Vollbart. Außerdem ist keine Grafik mehr abgeschnitten.";
 const APP_DATEIEN = [
   "./", "index.html", "manifest.webmanifest", "css/style.css",
   "js/version.js", "js/splash.js", "js/daten.js", "js/speicher.js", "js/ton.js", "js/zeichnen.js", "js/effekte.js",
