@@ -52,7 +52,8 @@ function boeseAugen(x, cx, cy, abstand = 7, g = 3.6) {
 // ----- Spielfigur -----
 function figurSprite(fig, schritt) {
   const f = fig.farbe;
-  return sprite(`figur-${fig.id}-${schritt}`, 40, 50, x => {
+  return sprite(`figur-${fig.id}-${schritt}`, 40, 53, x => {
+    x.translate(0, 3);   // Platz für die Mütze
     const b = schritt ? 2 : -2;   // Beine im Wechsel
     // Beine
     rundRechteck(x, 13, 33 + Math.max(0, -b), 6, 12 - Math.abs(b) / 2, 2); fuellen(x, f.hose);
@@ -189,6 +190,15 @@ const KLEIN_MALEN = {
 };
 function kleinSprite(k) { const [w, h, m] = KLEIN_MALEN[k]; return sprite("klein-" + k, w, h, m); }
 
+// Schild am Boden: Kasten passt sich der Textbreite an (cx/cy = Mitte)
+function bodenSchild(x, text, cx, cy, farbe, groesse, hoehe) {
+  x.font = `900 ${groesse}px Nunito, sans-serif`;
+  const breite = x.measureText(text).width + 18;
+  x.fillStyle = farbe; rundRechteck(x, cx - breite / 2, cy - hoehe / 2, breite, hoehe, 6); x.fill();
+  x.fillStyle = "#ffffff"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(text, cx, cy + 1);
+  x.textAlign = "left"; x.textBaseline = "alphabetic";
+}
+
 // ----- Boden: Baumarkt-Halle (eine große Kachel, die sich wiederholt) -----
 const BODEN_GROESSE = 640;
 function bodenKachel(art = "standard") {
@@ -198,8 +208,13 @@ function bodenKachel(art = "standard") {
     // Betonplatten
     x.strokeStyle = "rgba(90,84,76,.25)"; x.lineWidth = 2;
     for (let i = 0; i <= BODEN_GROESSE; i += 160) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, BODEN_GROESSE); x.moveTo(0, i); x.lineTo(BODEN_GROESSE, i); x.stroke(); }
+    // Nahtlos: was über den Kachelrand ragt, auf der gegenüberliegenden Seite weitermalen
+    const nahtlos = malen => { for (const dx of [-BODEN_GROESSE, 0, BODEN_GROESSE]) for (const dy of [-BODEN_GROESSE, 0, BODEN_GROESSE]) { x.save(); x.translate(dx, dy); malen(); x.restore(); } };
     // Flecken und Kratzer
-    for (let i = 0; i < 18; i++) { x.fillStyle = `rgba(80,70,60,${0.03 + zufall() * 0.04})`; x.beginPath(); x.ellipse(zufall() * BODEN_GROESSE, zufall() * BODEN_GROESSE, 8 + zufall() * 30, 4 + zufall() * 12, zufall() * 3, 0, Math.PI * 2); x.fill(); }
+    for (let i = 0; i < 18; i++) {
+      const f = `rgba(80,70,60,${0.03 + zufall() * 0.04})`, px = zufall() * BODEN_GROESSE, py = zufall() * BODEN_GROESSE, rx = 8 + zufall() * 30, ry = 4 + zufall() * 12, w = zufall() * 3;
+      nahtlos(() => { x.fillStyle = f; x.beginPath(); x.ellipse(px, py, rx, ry, w, 0, Math.PI * 2); x.fill(); });
+    }
     // Fahrspur wie ein Zollstock: grün mit weißen Strichen
     x.fillStyle = "#3aa935"; x.fillRect(0, 306, BODEN_GROESSE, 26);
     x.fillStyle = "rgba(255,255,255,.85)";
@@ -219,21 +234,23 @@ function bodenKachel(art = "standard") {
       for (let i = 0; i < 4; i++) x.fillRect(px, py + 4 + i * 12, 70, 4);
     }
     x.textAlign = "left";
-    x.fillStyle = "#3aa935"; rundRechteck(x, 40, 200, 66, 24, 5); x.fill();
-    x.fillStyle = "#ffffff"; x.font = "900 12px Nunito, sans-serif"; x.fillText("GARTEN →", 46, 216);
+    bodenSchild(x, "GARTEN →", 76, 212, "#3aa935", 12, 24);
     // Farben-Abteilung: Farbspritzer, Tropfspuren und Fußabdrücke
     if (art === "farben") {
       for (let i = 0; i < 22; i++) {
-        const c = FARBTOEPFE[i % FARBTOEPFE.length], px = zufall() * BODEN_GROESSE, py = zufall() * BODEN_GROESSE, r = 4 + zufall() * 14;
-        x.globalAlpha = 0.35 + zufall() * 0.3; x.fillStyle = c;
-        x.beginPath(); for (let k = 0; k <= 10; k++) { const a = k / 10 * Math.PI * 2, rr = r * (0.75 + zufall() * 0.5); x.lineTo(px + Math.cos(a) * rr, py + Math.sin(a) * rr); } x.fill();
-        for (let k = 0; k < 4; k++) { kreis(x, px + (zufall() - 0.5) * r * 4, py + (zufall() - 0.5) * r * 4, 1 + zufall() * 2.5); x.fill(); }
+        const c = FARBTOEPFE[i % FARBTOEPFE.length], px = zufall() * BODEN_GROESSE, py = zufall() * BODEN_GROESSE, r = 4 + zufall() * 14, alpha = 0.35 + zufall() * 0.3;
+        const rand = []; for (let k = 0; k <= 10; k++) rand.push(r * (0.75 + zufall() * 0.5));
+        const tropfen = []; for (let k = 0; k < 4; k++) tropfen.push([(zufall() - 0.5) * r * 4, (zufall() - 0.5) * r * 4, 1 + zufall() * 2.5]);
+        nahtlos(() => {
+          x.globalAlpha = alpha; x.fillStyle = c;
+          x.beginPath(); rand.forEach((rr, k) => { const a = k / 10 * Math.PI * 2; x.lineTo(px + Math.cos(a) * rr, py + Math.sin(a) * rr); }); x.fill();
+          for (const [tx, ty, tr] of tropfen) { kreis(x, px + tx, py + ty, tr); x.fill(); }
+        });
       }
       x.globalAlpha = 0.4; x.fillStyle = "#2f7fd6";
       for (let i = 0; i < 9; i++) { const px = 60 + i * 26, py = 560 - i * 20 + (i % 2) * 10; x.beginPath(); x.ellipse(px, py, 5, 8, 0.9, 0, Math.PI * 2); x.fill(); }
       x.globalAlpha = 1;
-      x.fillStyle = "#e30613"; rundRechteck(x, 470, 210, 118, 30, 6); x.fill();
-      x.fillStyle = "#ffffff"; x.font = "900 14px Nunito, sans-serif"; x.textAlign = "center"; x.fillText("FARBEN & LACKE", 529, 230); x.textAlign = "left";
+      bodenSchild(x, "FARBEN & LACKE", 529, 225, "#e30613", 14, 30);
     }
   });
 }
@@ -411,7 +428,7 @@ function fleckSprite(farbe, form) {
     x.beginPath();
     for (let i = 0; i <= 14; i++) { const a = i / 14 * Math.PI * 2, r = 16 + zufall() * 8; x.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r); }
     x.closePath(); x.fill();
-    for (let i = 0; i < 7; i++) { const a = zufall() * Math.PI * 2, r = 25 + zufall() * 6; kreis(x, 32 + Math.cos(a) * r, 32 + Math.sin(a) * r, 1.5 + zufall() * 3); x.fill(); }
+    for (let i = 0; i < 7; i++) { const a = zufall() * Math.PI * 2, r = 24 + zufall() * 3.5; kreis(x, 32 + Math.cos(a) * r, 32 + Math.sin(a) * r, 1.5 + zufall() * 2.5); x.fill(); }
     x.fillStyle = "rgba(255,255,255,.25)"; x.beginPath(); x.ellipse(26, 25, 6, 3, -0.6, 0, Math.PI * 2); x.fill();
   });
 }
@@ -440,3 +457,15 @@ Object.assign(DEKO_MALEN, {
     kreis(x, 23, 40, 4); fuellen(x, "#5b636c");
   }],
 });
+
+// ----- Randkorrektur: manche Zeichnungen ragen etwas über ihren Rahmen hinaus.
+// [mehr Breite, mehr Höhe, nach rechts, nach unten] – so wird nichts abgeschnitten.
+function randKorrektur(tabelle, korrektur) {
+  for (const [name, [dw, dh, dx, dy]] of Object.entries(korrektur)) {
+    const [w, h, m] = tabelle[name];
+    tabelle[name] = [w + dw, h + dh, (x, v) => { x.translate(dx, dy); m(x, v); }];
+  }
+}
+randKorrektur(GEGNER_MALEN, { farbe: [0, 6, 0, 6], eimer: [0, 6, 0, 6], megaroller: [3, 0, 2, 0], farbmeister: [4, 0, 0, 0] });
+randKorrektur(KLEIN_MALEN, { schraube: [2, 0, 1.5, 0] });
+randKorrektur(DEKO_MALEN, { farbstapel: [4, 2, 0, 1.5], korb: [0, 6, 0, 6], leiter: [0, 2, 0, 1.5], farbfaecher: [22, 0, 11, 0] });

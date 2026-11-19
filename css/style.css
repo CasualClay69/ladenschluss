@@ -73,7 +73,7 @@ body { user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color
 .figurKarte b { font-family: var(--titel); font-weight: 400; font-size: 1.2rem; color: #ff4b55; }
 .figurKarte.gewaehlt { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(227,6,19,.35), 0 10px 24px rgba(0,0,0,.4); }
 .figurKarte.gesperrt { opacity: .5; cursor: default; }
-.figurBild { width: 80px; height: 100px; }
+.figurBild { width: 80px; height: 106px; }
 
 /* Werkstatt */
 .werkstattListe { display: grid; gap: 10px; width: min(560px, 100%); }
@@ -201,7 +201,7 @@ body { user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color
   .knopf { padding: 10px 18px; }
   .figurenListe { flex-wrap: nowrap; }
   .figurKarte { width: min(180px, 30vw); padding: 10px; }
-  .figurBild { width: 56px; height: 70px; }
+  .figurBild { width: 56px; height: 74px; }
   .werkstattListe { grid-template-columns: 1fr 1fr; width: min(820px, 100%); }
   .werkKarte { padding: 8px 10px; }
   .karte { padding: 12px 14px; width: min(620px, 100%); }

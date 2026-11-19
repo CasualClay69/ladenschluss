@@ -47,8 +47,8 @@ function zeigeFiguren() {
     k.className = "figurKarte" + (f.gesperrt ? " gesperrt" : "") + (f.id === gewaehlteFigur ? " gewaehlt" : "");
     k.disabled = !!f.gesperrt;
     const bild = document.createElement("canvas");
-    bild.width = 80; bild.height = 100; bild.className = "figurBild";
-    if (!f.gesperrt) { const s = figurSprite(f, 0); bild.getContext("2d").drawImage(s.c, 0, 0, 80, 100); }
+    bild.width = 80; bild.height = 106; bild.className = "figurBild";
+    if (!f.gesperrt) { const s = figurSprite(f, 0); bild.getContext("2d").drawImage(s.c, 0, 0, 80, 80 * s.h / s.w); }
     else { const c = bild.getContext("2d"); c.font = "54px sans-serif"; c.textAlign = "center"; c.fillText("🔒", 40, 68); }
     const start = f.start ? `<div class="klein">Startwaffe: ${WAFFEN[f.start].icon} ${WAFFEN[f.start].name}</div>` : "";
     k.innerHTML = `<b>${f.name}</b><div class="klein">${f.text}</div>${start}`;
@@ -283,6 +283,8 @@ function richteUiEin() {
   $("nochmalKnopf").addEventListener("click", () => { zeigeOverlay("ende", false); starteRunde(); });
   $("menueKnopf").addEventListener("click", () => { zeigeOverlay("ende", false); zeigeTitel(); });
   document.addEventListener("visibilitychange", () => { if (document.hidden && G && !G.pause && !G.ende) umschaltenPause(); });
+  // Grafiken mit Schrift (tuum, Schilder) neu malen, sobald die Schriftarten geladen sind
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => spriteSpeicher.clear());
   zeigeTitel();
   requestAnimationFrame(schleife);
 }
