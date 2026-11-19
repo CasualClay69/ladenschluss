@@ -40,6 +40,7 @@ self.addEventListener("fetch", ereignis => {
     return;
   }
   if (adresse.origin !== location.origin) return;
+  if (adresse.searchParams.has("frisch")) return;   // Versions-Check (js/app.js): immer direkt vom Server, nie aus dem Speicher
 
   ereignis.respondWith(
     caches.open(CACHE).then(cache => cache.match(anfrage, { ignoreSearch: true }).then(gespeichert => {
