@@ -38,8 +38,8 @@ async function pruefeAufUpdate() {
 async function aktualisiereApp() {
   document.getElementById("updateJetzt").textContent = "⏳ Einen Moment …";
   try { await Promise.all(APP_DATEIEN.map(d => fetch(d, { cache: "reload" }))); } catch (e) { /* trotzdem weiter */ }
-  try { for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch (e) { /* egal */ }
-  try { for (const n of await caches.keys()) if (n !== "ladenschluss-schriften") await caches.delete(n); } catch (e) { /* egal */ }
+  try { for (const r of await navigator.serviceWorker.getRegistrations()) if (r.scope === new URL("./", location.href).href) await r.unregister(); } catch (e) { /* egal */ }
+  try { for (const n of await caches.keys()) if (n.startsWith("ladenschluss-v")) await caches.delete(n); } catch (e) { /* egal */ }
   location.reload();
 }
 document.getElementById("updateJetzt").addEventListener("click", aktualisiereApp);

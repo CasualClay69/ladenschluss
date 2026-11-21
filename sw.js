@@ -22,7 +22,7 @@ self.addEventListener("install", ereignis => {
 self.addEventListener("activate", ereignis => {
   ereignis.waitUntil(
     caches.keys()
-      .then(namen => Promise.all(namen.filter(n => n !== CACHE && n !== SCHRIFTEN).map(n => caches.delete(n))))
+      .then(namen => Promise.all(namen.filter(n => n.startsWith("ladenschluss-v") && n !== CACHE).map(n => caches.delete(n))))
       .then(() => self.clients.claim())
   );
 });

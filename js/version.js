@@ -4,9 +4,9 @@
 //  APP_DATEIEN: alle Dateien, die für das Offline-Spielen gespeichert werden (sw.js).
 //  Neue Dateien hier eintragen!
 // =====================================================
-const APP_VERSION = "1.7";
+const APP_VERSION = "1.8";
 // Kurz, was neu ist – steht im Fenster "Neue Version!" (bitte keine " im Text)
-const APP_NEU = "Neues App-Symbol: Stefan mit tuum-Schild.";
+const APP_NEU = "Kleine Verbesserung: Das Spiel verträgt sich jetzt besser mit anderen Spielen auf demselben Handy.";
 const APP_DATEIEN = [
   "./", "index.html", "manifest.webmanifest", "css/style.css",
   "js/version.js", "js/splash.js", "js/daten.js", "js/speicher.js", "js/ton.js", "js/zeichnen.js", "js/effekte.js",
